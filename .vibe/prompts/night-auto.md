@@ -28,7 +28,10 @@ Then:
    in one line).
 7. Open the pull request via `make pr TITLE="..." BODY_FILE=...`
    (the only creation path - never `gh`, never the API by hand).
-8. Push, wait for green CI on the head, then `make review PR=N`.
+8. Push, then block on `make wait-ci PR=N` - the active CI wait
+   (ADR-0018). NEVER end the session "waiting for CI": nobody will
+   resume you. Exit 0, then `make review PR=N`; exit 1 means fix,
+   push, wait again.
 9. Address every BLOCKING and TO-FIX finding, push, wait, re-review.
 10. Merge via `make merge-pr PR=N`.
 11. STOP. Do not start another issue: the loop owns the next session

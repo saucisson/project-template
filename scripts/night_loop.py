@@ -488,8 +488,8 @@ def run_auto_discovered_sessions(
 
 def main(*, command_line_arguments: Sequence[str]) -> int:
     """Entry point: night directive in (or auto-discovered), report out."""
-    arguments = parse_arguments(command_line_arguments=command_line_arguments)
     load_environment_file()
+    arguments = parse_arguments(command_line_arguments=command_line_arguments)
     github_token = load_github_token()
     if shutil.which(DEVELOPER_CLI_COMMAND) is None:
         print(

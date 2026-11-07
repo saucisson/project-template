@@ -65,15 +65,28 @@ The review runs locally as an isolated Vibe Code session (ADR-0010):
 
 1. Push the branch, open the pull request via
    `make pr TITLE="..." BODY_FILE=...` - the only creation path, it
-   works attended and unattended (never `gh`; ADR-0017) - then
-   **wait**: one command at a time - never a chained
-   `git push && make review`; a review of a stale head
-   is a wasted session. Before invoking the review, verify the
-   preconditions yourself (`docs/agents/orchestration.md` §4): `make
-   check` green on this exact commit, tests present for every new
-   piece of logic, and the diff touching no escalation-list file -
-   if it does, the escalation (`docs/agents/escalation.md`) comes
-   **before** the review, never after. Then:
+   works attended and unattended (never `gh`; ADR-0017) - then wait
+   **actively**, one command at a time (never a chained
+   `git push && make review`; a review of a stale head is a wasted
+   session):
+
+   ```console
+   make wait-ci PR=N
+   ```
+
+   It blocks until CI concludes on the pull request head, inside this
+   session (ADR-0018): exit 0 is green (the exact precondition the
+   review enforces), exit 1 is a red head or a timeout. NEVER end the
+   turn or the session "waiting for CI": nobody resumes a session, an
+   unattended one least of all - block on `make wait-ci`, or stop
+   honestly and explain the state.
+
+   Before invoking the review, verify the remaining preconditions
+   yourself (`docs/agents/orchestration.md` §4): `make check` green on
+   this exact commit, tests present for every new piece of logic, and
+   the diff touching no escalation-list file - if it does, the
+   escalation (`docs/agents/escalation.md`) comes **before** the
+   review, never after. Then:
 
    ```console
    make review PR=N

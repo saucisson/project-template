@@ -76,6 +76,12 @@ The reviewer session never merges: it writes the report; the merge
 driver reads it. If any criterion is unmet, the PR waits: stalled PRs
 are the honest state, silent rule-bending is not.
 
+"Pending CI means the review waits" is served by an **active** wait,
+never by ending the session on a wait: `make wait-ci PR=N`
+(`scripts/wait_ci.py`, ADR-0018) blocks until CI concludes on the head
+- exit 0 green (the precondition above), exit 1 red or timed out. A
+session that stops "waiting for CI" is a session nobody resumes.
+
 ## 5. Priority rule
 
 Answered `needs-human` issues are picked up **before** any new work. A
@@ -139,6 +145,10 @@ and a session that dies at 3 a.m. costs one issue, not the night.
 - Nobody answers approvals: allowlisted commands run (ADR-0015), and
   a denied call is a stop-and-escalate signal, never an obstacle to
   route around.
+- A session never ends on a wait: CI is waited for **actively**, with
+  `make wait-ci PR=N` (ADR-0018), inside the session's time budget -
+  "I will continue once CI finishes" is the attended reflex of a
+  session nobody will resume.
 - The morning audit is unchanged and is the whole point: `WORKLOG.md`,
   the pull requests, every `needs-human` issue, and every
   `night-claimed` issue tell the night's story (§7).
