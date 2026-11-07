@@ -63,8 +63,11 @@ in the same commit.
 
 The review runs locally as an isolated Vibe Code session (ADR-0010):
 
-1. Open the pull request, push, then **wait**: one command at a time -
-   never a chained `git push && make review`; a review of a stale head
+1. Push the branch, open the pull request via
+   `make pr TITLE="..." BODY_FILE=...` - the only creation path, it
+   works attended and unattended (never `gh`; ADR-0017) - then
+   **wait**: one command at a time - never a chained
+   `git push && make review`; a review of a stale head
    is a wasted session. Before invoking the review, verify the
    preconditions yourself (`docs/agents/orchestration.md` §4): `make
    check` green on this exact commit, tests present for every new
@@ -106,6 +109,15 @@ A BLOCKING finding has no override: address it, or escalate to the
 human (`needs-human`) if you believe it is a false positive - the
 human decides, in the open, on the record.
 
+Unattended sessions (`make night`, ADR-0017) follow this same
+contract with nobody watching: a denied or pending tool call is a
+stop-and-escalate signal - label, comment, log, stop - never an
+obstacle to route around (ADR-0015). In the auto-discovered loop
+(`make night` without ISSUES) you pick ONE issue from the worklist
+and claim it FIRST (`make claim ISSUE=N`): the claim is your first
+act, not an afterthought - no claim, no work, and a failed attempt
+stays claimed for the morning audit.
+
 ## Budgets and blocking
 
 - An issue gets **at most 3 attempts**. If the third fails, stop: label the
@@ -119,6 +131,11 @@ human decides, in the open, on the record.
 - Merge anything by hand or into `main`. The only merge path is
   `make merge-pr`, into `daily`, on a zero-BLOCKING report you did not
   write (the reviewer session did). The reviewer session never merges.
+- Open a pull request outside `make pr`: `gh` is not the protocol's
+  tool, and the unattended flow cannot use it (ADR-0017).
+- Work an issue you have not claimed first (auto-discovered night
+  sessions): the claim is what keeps two sessions off the same issue
+  (ADR-0017).
 - Modify: `AGENTS.md`, `docs/agents/`, `docs/decisions/` (you may only
   *draft* a new ADR inside your PR, never accept one; number it from
   0100, the 0001-0099 range belongs to the template), lint/type/coverage
