@@ -31,9 +31,17 @@ Otherwise: label `blocked`, comment why, move on.
 
 ## 3. Sequential work
 
-One issue, one branch, one PR at a time. Small pull requests (< 500 lines).
-Rebase on `daily` before opening the PR. Full `make check` before the
-reviewer sees anything.
+One issue, one branch, one PR, one context at a time. Small pull
+requests (< 500 lines). Rebase on `daily` before opening the PR. Full
+`make check` before the reviewer sees anything.
+
+The developer session is cleared after every merged pull request
+(`/clear` in the Vibe Code CLI, a new session elsewhere): a context
+that carries the previous issue's residue rationalizes the next one.
+Nothing is lost - the day's memory lives in the repository
+(`WORKLOG.md`, the pull requests, the issues), and the fresh session
+re-anchors by re-reading the directive and `AGENTS.md` (§1), the
+goal-drift guard.
 
 ## 4. Review and merge criteria (codified - no judgement calls)
 

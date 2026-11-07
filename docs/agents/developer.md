@@ -88,7 +88,13 @@ The review runs locally as an isolated Vibe Code session (ADR-0010):
    PR, checks green, PR open and mergeable), merges into `daily`
    pinned to the reviewed commit with the linear method the repository
    allows (squash, or a rebase merge when squash is disabled), and
-   deletes the branch (ADR-0009).
+   deletes the branch (ADR-0009). Then **clear the session**
+   (`/clear` in the Vibe Code CLI - it can carry the next prompt, so
+   seed the fresh session with the re-read; a new session elsewhere):
+   the next issue starts from a fresh context, re-anchored on the
+   directive and this contract. The records you just wrote
+   (`WORKLOG.md`, the pull request, the issue) are the continuity -
+   never the session.
 3. **Exit 1** (findings): address every BLOCKING and TO-FIX finding,
    push, wait for CI, and re-run `make review PR=N`.
 4. **Exit 2** (protocol failure): do not retry blindly - report it as a
