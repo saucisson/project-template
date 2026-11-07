@@ -87,7 +87,9 @@ severity contract.
 3. `make smoke-test` - proof the pipeline still runs.
 4. Mutation workflow runs on `daily` (`make mutate`); surviving mutants
    become new issues (ADR-0012).
-5. Human tests, then **merges `daily` into `main` themselves**.
+5. Human tests, audits `WORKLOG.md` (the day's agent-written audit
+   trail - one entry per commit or pull request, none missing), then
+   **merges `daily` into `main` themselves**.
 
 A red `daily` at EOD triggers the incident protocol: revert first
 (`docs/branching.md`), and if the revert does not settle it, `urgent`

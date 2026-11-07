@@ -52,6 +52,13 @@ Your report contains:
   with the ADR or issue comment that decided it.
 - **Known limitations**: what remains unhandled and why.
 
+Your `WORKLOG.md` entry is part of the change: append it at the top of
+the file (entry format inside), in the branch, before opening the
+pull request. The reviewer checks it against the diff; the human reads
+the day's entries when auditing the `daily` → `main` merge. A direct
+commit on `daily` (revert protocol, docs-only fix) carries its entry
+in the same commit.
+
 ## After the pull request
 
 The review runs locally as an isolated Vibe Code session (ADR-0010):
