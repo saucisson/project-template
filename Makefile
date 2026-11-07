@@ -10,7 +10,7 @@ DAY_TAG := daily-$(shell date +%F)
 .DEFAULT_GOAL := help
 .PHONY: help install lint format typecheck imports test check security build \
         day-start day-report smoke-test mutate notify review merge-pr pr claim \
-        wait-ci night review-bundle clean
+        claim-pr wait-ci night review-bundle clean
 
 help: ## List available targets with their description.
 	@grep --extended-regexp '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -72,6 +72,9 @@ pr: ## Open the pull request from the current branch: TITLE=... [BODY_FILE=...] 
 
 claim: ## Claim an issue before working it (auto-discovered night sessions): ISSUE=N (ADR-0017).
 	$(PYTHON) scripts/claim_issue.py --issue "$(ISSUE)"
+
+claim-pr: ## Claim a pull request before resuming it (night recovery): PR=N (ADR-0017).
+	$(PYTHON) scripts/claim_issue.py --pr "$(PR)"
 
 wait-ci: ## Actively wait for CI on the pull request head: PR=N (ADR-0018).
 	$(PYTHON) scripts/wait_ci.py --pr-number "$(PR)"

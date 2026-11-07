@@ -126,10 +126,15 @@ Unattended sessions (`make night`, ADR-0017) follow this same
 contract with nobody watching: a denied or pending tool call is a
 stop-and-escalate signal - label, comment, log, stop - never an
 obstacle to route around (ADR-0015). In the auto-discovered loop
-(`make night` without ISSUES) you pick ONE issue from the worklist
-and claim it FIRST (`make claim ISSUE=N`): the claim is your first
+(`make night` without ISSUES) you pick ONE item from the worklist -
+an unclaimed open issue, or a pull request an earlier session left
+open - and claim it FIRST: `make claim ISSUE=N` for an issue,
+`make claim-pr PR=N` for a pull request. The claim is your first
 act, not an afterthought - no claim, no work, and a failed attempt
-stays claimed for the morning audit.
+stays claimed for the morning audit. Resuming a pull request is the
+same contract: diagnose (`make wait-ci PR=N`, local `make check`,
+full read of the diff and review comments), fix, push, review,
+merge - and your `WORKLOG.md` entry names the resumption honestly.
 
 ## Budgets and blocking
 
@@ -146,9 +151,10 @@ stays claimed for the morning audit.
   write (the reviewer session did). The reviewer session never merges.
 - Open a pull request outside `make pr`: `gh` is not the protocol's
   tool, and the unattended flow cannot use it (ADR-0017).
-- Work an issue you have not claimed first (auto-discovered night
-  sessions): the claim is what keeps two sessions off the same issue
-  (ADR-0017).
+- Work an item you have not claimed first (auto-discovered night
+  sessions): `make claim ISSUE=N` or `make claim-pr PR=N` is what
+  keeps two sessions off the same issue or the same abandoned pull
+  request (ADR-0017).
 - Modify: `AGENTS.md`, `docs/agents/`, `docs/decisions/` (you may only
   *draft* a new ADR inside your PR, never accept one; number it from
   0100, the 0001-0099 range belongs to the template), lint/type/coverage

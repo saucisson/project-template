@@ -9,27 +9,29 @@ flavors:
 - auto-discovered: ``make night`` with no ISSUES - the loop derives
   the worklist from the repository itself (open issues, triage gate,
   minus the ``night-claimed`` label), and each session **picks one
-  issue and claims it first** (``make claim``, ADR-0017). The claim
-  is the concurrency guard: two sessions never work the same issue,
-  and a failed attempt stays claimed for the morning audit.
+  item and claims it first** (``make claim`` or ``make claim-pr``,
+  ADR-0017). The claim is the concurrency guard: two sessions never
+  work the same item, and a failed attempt stays claimed for the
+  morning audit.
 
 In both modes the process boundary IS the context reset of the
 interactive flow (orchestration 3): no issue inherits the previous
 one's residue, and a session that dies at 3 a.m. costs one issue, not
 the night. The loop re-derives the worklist before every session and
-stops when no unclaimed issue remains, when the session budget is
+stops when no unclaimed item remains, when the session budget is
 spent, or when a session claims nothing - the night never spins on
-one stuck issue.
+one stuck item.
 
 Nobody answers approvals while this runs: sessions get the project's
 runtime profile (``.vibe/``, ADR-0015), allowlisted commands run, and
 a denied call is a stop signal the session escalates honestly - never
 an obstacle to route around.
 
-The loop itself is honest glue: it fetches the issues, applies the
-triage gate, renders the versioned prompt, runs the session, records
-the exit code, and moves on. The verdicts live in the repository
-(``WORKLOG.md``, the pull requests, the issues) for the morning audit.
+The loop itself is honest glue: it fetches the issues and the
+recoverable pull requests, applies the triage gate, renders the
+versioned prompt, runs the session, records the exit code, and moves
+on. The verdicts live in the repository (``WORKLOG.md``, the pull
+requests, the issues) for the morning audit.
 
 Usage::
 
@@ -39,6 +41,7 @@ Usage::
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -70,7 +73,11 @@ DEFAULT_SESSION_TIME_LIMIT_SECONDS = 3600
 DEFAULT_MAXIMUM_SESSIONS = 10
 DEFAULT_CANDIDATE_COUNT = 10
 OPEN_ISSUES_PAGE_SIZE = 100
+OPEN_PULL_REQUESTS_PAGE_SIZE = 100
+DAILY_BRANCH_NAME = "daily"
+NIGHT_HEAD_BRANCH_PATTERN = re.compile(r"^(?:feat|fix)/(\d+)$")
 TRIAGE_SKIP_LABELS = ("blocked", "needs-human", "night-claimed")
+CLAIM_LABEL_NAME = "night-claimed"
 
 REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 
@@ -256,6 +263,143 @@ def render_worklist(*, candidates: Sequence[tuple[int, dict[str, object]]]) -> s
     return "\n\n---\n\n".join(sections)
 
 
+def parse_backing_issue_number(*, head_ref: object) -> int | None:
+    """Return the backing issue number of a ``feat/N`` or ``fix/N`` branch."""
+    if not isinstance(head_ref, str):
+        return None
+    match = NIGHT_HEAD_BRANCH_PATTERN.match(head_ref)
+    return int(match.group(1)) if match else None
+
+
+def item_has_claim_label(*, item: dict[str, object]) -> bool:
+    """Tell whether an issue or pull request payload already carries the claim."""
+    labels = item.get("labels", [])
+    if not isinstance(labels, list):
+        return False
+    label_names = {entry.get("name", "") for entry in labels if isinstance(entry, dict)}
+    return CLAIM_LABEL_NAME in label_names
+
+
+def fetch_candidate_pull_requests(
+    *,
+    http_client: httpx.Client,
+    repository_slug: str,
+    candidate_limit: int,
+) -> list[tuple[int, dict[str, object]]]:
+    """Derive the recoverable pull requests (ADR-0017 recovery path).
+
+    A pull request is recoverable when all of these hold: it is open,
+    it targets ``daily``, its head branch is ``feat/N`` or ``fix/N``,
+    its backing issue #N carries ``night-claimed`` (the mark of an
+    earlier unattended attempt), and the pull request itself is not
+    already claimed by another recovery session.
+    """
+    response = http_client.get(
+        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/pulls",
+        params={
+            "state": "open",
+            "base": DAILY_BRANCH_NAME,
+            "per_page": OPEN_PULL_REQUESTS_PAGE_SIZE,
+        },
+    )
+    if not response.is_success:
+        print(f"Warning: could not list open pull requests ({response.status_code}).")
+        return []
+    payload = response.json()
+    if not isinstance(payload, list):
+        print("Warning: the open-pull-requests payload is unexpected.")
+        return []
+    candidates: list[tuple[int, dict[str, object]]] = []
+    for pull_request in payload:
+        if not isinstance(pull_request, dict):
+            continue
+        pr_number = pull_request.get("number")
+        if not isinstance(pr_number, int):
+            continue
+        if item_has_claim_label(item=pull_request):
+            continue
+        head = pull_request.get("head")
+        head_ref = head.get("ref") if isinstance(head, dict) else None
+        backing_issue_number = parse_backing_issue_number(head_ref=head_ref)
+        if backing_issue_number is None:
+            continue
+        backing_issue = fetch_issue(
+            http_client=http_client,
+            repository_slug=repository_slug,
+            issue_number=backing_issue_number,
+        )
+        if backing_issue is None or not item_has_claim_label(item=backing_issue):
+            continue
+        candidates.append((pr_number, pull_request))
+    candidates.sort(key=lambda candidate: candidate[0])
+    return candidates[:candidate_limit]
+
+
+def render_pull_request_section(
+    *,
+    pull_request: dict[str, object],
+    pr_number: int,
+) -> str:
+    """Render a recoverable pull request as the prompt's worklist section."""
+    title = pull_request.get("title", "")
+    title_text = title if isinstance(title, str) else ""
+    head = pull_request.get("head")
+    head_ref = head.get("ref") if isinstance(head, dict) else "unknown"
+    backing_issue_number = parse_backing_issue_number(head_ref=head_ref)
+    backing_clause = (
+        f", backing issue #{backing_issue_number}" if backing_issue_number is not None else ""
+    )
+    body = pull_request.get("body")
+    body_text = body if isinstance(body, str) else ""
+    return (
+        f"# Pull request #{pr_number}: {title_text}\n\n"
+        f"An earlier session left this pull request open (branch `{head_ref}`"
+        f"{backing_clause}, targeting `daily`) and never merged it. It is"
+        " offered for recovery: check it out, find out where it stands, fix"
+        " it, and take it through the review gate.\n\n"
+        f"{body_text}"
+    )
+
+
+def render_auto_worklist(
+    *,
+    issues: Sequence[tuple[int, dict[str, object]]],
+    pull_requests: Sequence[tuple[int, dict[str, object]]],
+) -> str:
+    """Render the combined worklist: unclaimed issues, then recoverable PRs."""
+    sections = [
+        render_issue_section(issue=issue, issue_number=issue_number)
+        for issue_number, issue in issues
+    ]
+    sections.extend(
+        render_pull_request_section(pull_request=pull_request, pr_number=pr_number)
+        for pr_number, pull_request in pull_requests
+    )
+    return "\n\n---\n\n".join(sections)
+
+
+def auto_candidate_keys(
+    *,
+    issues: Sequence[tuple[int, dict[str, object]]],
+    pull_requests: Sequence[tuple[int, dict[str, object]]],
+) -> set[tuple[str, int]]:
+    """Build the anti-spin guard: one key per worklist item."""
+    issue_keys = {("issue", issue_number) for issue_number, _ in issues}
+    pull_request_keys = {("pull request", pr_number) for pr_number, _ in pull_requests}
+    return issue_keys | pull_request_keys
+
+
+def describe_auto_candidates(
+    *,
+    issues: Sequence[tuple[int, dict[str, object]]],
+    pull_requests: Sequence[tuple[int, dict[str, object]]],
+) -> str:
+    """Render the candidate list for the loop's own trace."""
+    descriptions = [f"#{issue_number} (issue)" for issue_number, _ in issues]
+    descriptions.extend(f"#{pr_number} (pull request)" for pr_number, _ in pull_requests)
+    return ", ".join(descriptions)
+
+
 def load_prompt_template(*, template_path: str) -> str:
     """Load a versioned night-session prompt (ADR-0017); missing fails closed."""
     resolved_path = REPOSITORY_ROOT / template_path
@@ -415,7 +559,7 @@ def run_auto_discovered_sessions(
     arguments: argparse.Namespace,
     results: list[str],
 ) -> None:
-    """Auto-discovery: each session picks one issue and claims it first."""
+    """Auto-discovery: each session picks one item and claims it first."""
     if arguments.max_sessions < 1:
         print(
             f"Error: {NIGHT_MAXIMUM_SESSIONS_VARIABLE} must be at least 1,"
@@ -431,27 +575,33 @@ def run_auto_discovered_sessions(
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
     sessions_started = 0
     while sessions_started < arguments.max_sessions:
-        candidates = fetch_candidate_issues(
+        issues = fetch_candidate_issues(
             http_client=http_client,
             repository_slug=repository_slug,
             candidate_limit=arguments.candidates,
         )
-        if not candidates:
-            print("\nNo unclaimed eligible issue left - the night is done.")
+        pull_requests = fetch_candidate_pull_requests(
+            http_client=http_client,
+            repository_slug=repository_slug,
+            candidate_limit=arguments.candidates,
+        )
+        if not issues and not pull_requests:
+            print("\nNo unclaimed eligible item left - the night is done.")
             break
-        candidate_numbers = [issue_number for issue_number, _ in candidates]
+        candidate_description = describe_auto_candidates(
+            issues=issues,
+            pull_requests=pull_requests,
+        )
         print(
             f"\n=== Session {sessions_started + 1} of at most"
-            f" {arguments.max_sessions} - candidates: "
-            + ", ".join(f"#{number}" for number in candidate_numbers)
-            + " ==="
+            f" {arguments.max_sessions} - candidates: {candidate_description} ==="
         )
         prompt_path = prompt_directory / f"session-{sessions_started + 1}.md"
         prompt_path.write_text(
             build_prompt(
                 template=prompt_template,
                 placeholder=WORKLIST_PLACEHOLDER,
-                replacement=render_worklist(candidates=candidates),
+                replacement=render_auto_worklist(issues=issues, pull_requests=pull_requests),
             ),
             encoding="utf-8",
         )
@@ -463,19 +613,25 @@ def run_auto_discovered_sessions(
         sessions_started += 1
         print(f"Session exited {exit_code} after {format_duration(seconds=elapsed_seconds)}.")
         results.append(
-            f"Session {sessions_started} (candidates: "
-            + ", ".join(f"#{number}" for number in candidate_numbers)
-            + f"): exit {exit_code} ({format_duration(seconds=elapsed_seconds)})"
+            f"Session {sessions_started} (candidates: {candidate_description}):"
+            f" exit {exit_code} ({format_duration(seconds=elapsed_seconds)})"
         )
-        fresh_candidates = fetch_candidate_issues(
+        fresh_issues = fetch_candidate_issues(
             http_client=http_client,
             repository_slug=repository_slug,
             candidate_limit=arguments.candidates,
         )
-        fresh_numbers = {issue_number for issue_number, _ in fresh_candidates}
-        if set(candidate_numbers).issubset(fresh_numbers):
-            # No candidate was claimed: the next session would get the very
-            # same worklist. Stop instead of spinning on it all night.
+        fresh_pull_requests = fetch_candidate_pull_requests(
+            http_client=http_client,
+            repository_slug=repository_slug,
+            candidate_limit=arguments.candidates,
+        )
+        candidate_keys = auto_candidate_keys(issues=issues, pull_requests=pull_requests)
+        fresh_keys = auto_candidate_keys(issues=fresh_issues, pull_requests=fresh_pull_requests)
+        if candidate_keys.issubset(fresh_keys):
+            # No item was claimed and none disappeared: the next session
+            # would get the very same worklist. Stop instead of spinning
+            # on it all night.
             print(
                 "No candidate was claimed - stopping the loop instead of"
                 " retrying the same worklist."
