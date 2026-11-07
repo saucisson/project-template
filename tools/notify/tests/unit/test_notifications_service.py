@@ -23,8 +23,8 @@ from notify.services.notifications import (
     is_urgent,
 )
 
-SUCCESS = DeliverySuccess(delivery_channel=DeliveryChannel.CONSOLE)
-FAILURE = DeliveryFailure(failure_reason="http_error")
+SUCCESS: NotificationOutcome = DeliverySuccess(delivery_channel=DeliveryChannel.CONSOLE)
+FAILURE: NotificationOutcome = DeliveryFailure(failure_reason="http_error")
 
 
 class FakeDispatcher:

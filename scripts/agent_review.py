@@ -231,13 +231,9 @@ def extract_answer_text(*, raw_session_output: str) -> str:
         if isinstance(content_container, str) and content_container.strip():
             return content_container
         if isinstance(content_container, list):
-            text_parts = [
-                block.get("text", "")
-                for block in content_parts(blocks=content_container)
-                if block.get("text")
-            ]
-            if text_parts:
-                return "\n".join(text_parts)
+            answer_text = joined_block_text(blocks=content_parts(blocks=content_container))
+            if answer_text is not None:
+                return answer_text
     raise ReviewProtocolError("the session output has no assistant answer")
 
 
@@ -246,6 +242,18 @@ def content_parts(*, blocks: object) -> list[dict[str, object]]:
     if not isinstance(blocks, list):
         return []
     return [block for block in blocks if isinstance(block, dict)]
+
+
+def joined_block_text(*, blocks: list[dict[str, object]]) -> str | None:
+    """Join the textual blocks of a multi-block assistant answer, if any."""
+    text_parts: list[str] = []
+    for block in blocks:
+        text = block.get("text")
+        if isinstance(text, str) and text:
+            text_parts.append(text)
+    if not text_parts:
+        return None
+    return "\n".join(text_parts)
 
 
 def narrow_json_answer(*, answer_text: str) -> str:

@@ -135,10 +135,10 @@ plugins = ["pydantic.mypy"]
 # disallow_any_explicit = false
 
 [tool.pydantic-mypy]
+# pydantic 2.14's mypy plugin only recognizes the two options below; the former
+# warn_required_dynamic_attributes and warn_untyped_fields no longer exist.
 init_forbid_extra = true
 init_typed = true
-warn_required_dynamic_attributes = true
-warn_untyped_fields = true
 
 # ---------------------------------------------------------------------------
 # import-linter: the onion dependency rule, verified mechanically (ADR-0002).

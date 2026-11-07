@@ -12,15 +12,10 @@ from typing import TYPE_CHECKING
 
 import httpx
 import structlog
+from structlog.contextvars import merge_contextvars
 from structlog.dev import ConsoleRenderer
-from structlog.processors import (
-    JSONRenderer,
-    TimeStamper,
-    add_log_level,
-    add_logger_name,
-    merge_contextvars,
-)
-from structlog.stdlib import ProcessorFormatter
+from structlog.processors import JSONRenderer, TimeStamper, add_log_level
+from structlog.stdlib import ProcessorFormatter, add_logger_name
 
 from notify.infrastructure.notifications.console import ConsoleDispatcher
 from notify.infrastructure.notifications.discord import DiscordWebhookDispatcher
@@ -136,7 +131,7 @@ def select_dispatcher(
     them to the console silently would be a lie, so we raise instead.
     """
     if settings.discord_webhook_url is None:
-        if is_urgent(request):
+        if is_urgent(request=request):
             raise NotificationConfigurationError(
                 "An urgent notification requires DISCORD_WEBHOOK_URL to be configured."
             )
