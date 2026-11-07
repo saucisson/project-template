@@ -26,7 +26,11 @@ class ApplicationSettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="",
-        case_sensitive=True,
+        # Case-insensitive matching is what makes the documented uppercase
+        # variables (DISCORD_WEBHOOK_URL, LOG_LEVEL, LOG_FORMAT) load: field
+        # names are lowercase, and pydantic-settings matches them verbatim
+        # against the environment when case_sensitive=True.
+        case_sensitive=False,
         frozen=True,
     )
 

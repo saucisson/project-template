@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 import structlog
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from notify.infrastructure.notifications.console import ConsoleDispatcher
 from notify.infrastructure.notifications.discord import DiscordWebhookDispatcher
@@ -41,6 +41,9 @@ from notify.services.ports import MessageDispatcher
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+
+FAKE_WEBHOOK_URL = "https://discord.com/api/webhooks/123/fake-token"
 
 
 def keep_default_logging(*, settings: ApplicationSettings) -> None:
@@ -98,9 +101,7 @@ class TestSelectDispatcher:
     def test_discord_when_a_webhook_is_configured(
         self, sample_notification_request: NotificationRequest
     ) -> None:
-        settings = ApplicationSettings(
-            discord_webhook_url="https://discord.com/api/webhooks/123/fake-token"
-        )
+        settings = ApplicationSettings(discord_webhook_url=SecretStr(FAKE_WEBHOOK_URL))
 
         dispatcher = select_dispatcher(settings=settings, request=sample_notification_request)
 
@@ -230,18 +231,18 @@ class TestApplicationSettings:
     def test_the_webhook_url_loads_from_the_environment(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        monkeypatch.setenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/123/fake-token")
+        monkeypatch.setenv("DISCORD_WEBHOOK_URL", FAKE_WEBHOOK_URL)
 
         settings = ApplicationSettings()
 
         assert settings.discord_webhook_url is not None
-        assert settings.discord_webhook_url.get_secret_value() == (
-            "https://discord.com/api/webhooks/123/fake-token"
-        )
+        assert settings.discord_webhook_url.get_secret_value() == FAKE_WEBHOOK_URL
 
-    def test_an_invalid_log_level_is_rejected(self) -> None:
+    def test_an_invalid_log_level_is_rejected(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("LOG_LEVEL", "NOISY")
+
         with pytest.raises(ValidationError):
-            ApplicationSettings(log_level="NOISY")
+            ApplicationSettings()
 
 
 class TestConfigureLogging:
