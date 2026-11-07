@@ -18,13 +18,16 @@ import json
 import os
 import subprocess
 import sys
-from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import httpx
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 GITHUB_API_BASE_URL = "https://api.github.com"
-GITHUB_TOKEN_VARIABLE = "GITHUB_TOKEN"
+GITHUB_TOKEN_VARIABLE = "GITHUB_TOKEN"  # noqa: S105 - an env var NAME, never a secret
 ENVIRONMENT_FILE_NAME = ".env"
 NO_DESCRIPTION_TEXT = "No pull request description was provided."
 
@@ -121,9 +124,7 @@ def fetch_pull_request(
     return pull_request
 
 
-def write_review_inputs(
-    *, pull_request: dict[str, object], review_directory: Path
-) -> None:
+def write_review_inputs(*, pull_request: dict[str, object], review_directory: Path) -> None:
     """Write the description file the review consumes."""
     review_directory.mkdir(parents=True, exist_ok=True)
     description = pull_request.get("body")
@@ -146,8 +147,7 @@ def run_git(*, arguments: Sequence[str]) -> str:
     )
     if completed_process.returncode != EXIT_CODE_SUCCESS:
         print(
-            f"Error: git {' '.join(arguments)} failed:"
-            f" {completed_process.stderr.strip()}",
+            f"Error: git {' '.join(arguments)} failed: {completed_process.stderr.strip()}",
             file=sys.stderr,
         )
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
@@ -157,9 +157,7 @@ def run_git(*, arguments: Sequence[str]) -> str:
 def build_diff(*, base_ref: str, review_directory: Path) -> None:
     """Materialize the diff between the pull request base and HEAD."""
     run_git(arguments=["fetch", "origin", base_ref])
-    diff_text = run_git(
-        arguments=["diff", "--no-color", f"origin/{base_ref}...HEAD"]
-    )
+    diff_text = run_git(arguments=["diff", "--no-color", f"origin/{base_ref}...HEAD"])
     (review_directory / "pull-request.diff").write_text(diff_text, encoding="utf-8")
 
 
@@ -209,8 +207,7 @@ def post_review_comment(
         print("Warning: no review comment was produced (protocol failure?).")
         return
     response = http_client.post(
-        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}"
-        f"/issues/{pull_request_number}/comments",
+        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/issues/{pull_request_number}/comments",
         json={"body": comment_path.read_text(encoding="utf-8")},
     )
     if not response.is_success:
@@ -271,22 +268,32 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
         build_diff(base_ref=base_ref, review_directory=REVIEW_DIRECTORY)
         bundle_exit_code = run_script(
             command=[
-                "uv", "run", "python",
+                "uv",
+                "run",
+                "python",
                 str(SCRIPTS_DIRECTORY / "build_review_bundle.py"),
-                "--diff-file", str(REVIEW_DIRECTORY / "pull-request.diff"),
-                "--description-file", str(REVIEW_DIRECTORY / "pull-request-description.md"),
-                "--output", str(REVIEW_DIRECTORY / "bundle.md"),
+                "--diff-file",
+                str(REVIEW_DIRECTORY / "pull-request.diff"),
+                "--description-file",
+                str(REVIEW_DIRECTORY / "pull-request-description.md"),
+                "--output",
+                str(REVIEW_DIRECTORY / "bundle.md"),
             ]
         )
         if bundle_exit_code != EXIT_CODE_SUCCESS:
             return EXIT_CODE_PROTOCOL_FAILURE
         review_exit_code = run_script(
             command=[
-                "uv", "run", "python",
+                "uv",
+                "run",
+                "python",
                 str(SCRIPTS_DIRECTORY / "agent_review.py"),
-                "--bundle-file", str(REVIEW_DIRECTORY / "bundle.md"),
-                "--report-file", str(REVIEW_DIRECTORY / "review-report.json"),
-                "--comment-file", str(REVIEW_DIRECTORY / "review-comment.md"),
+                "--bundle-file",
+                str(REVIEW_DIRECTORY / "bundle.md"),
+                "--report-file",
+                str(REVIEW_DIRECTORY / "review-report.json"),
+                "--comment-file",
+                str(REVIEW_DIRECTORY / "review-comment.md"),
             ]
         )
         post_review_comment(

@@ -11,9 +11,12 @@ Usage::
 import argparse
 import subprocess
 import sys
-from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 MERGE_COMMIT_FORMAT = "%h %s"
@@ -51,8 +54,7 @@ def merges_since(*, tag_name: str) -> list[str]:
     git_output = run_git(
         arguments=["log", "--merges", f"--pretty={MERGE_COMMIT_FORMAT}", revision_range]
     )
-    merge_lines = [line for line in git_output.splitlines() if line.strip()]
-    return merge_lines
+    return [line for line in git_output.splitlines() if line.strip()]
 
 
 def commits_since(*, tag_name: str) -> int:

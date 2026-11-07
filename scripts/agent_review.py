@@ -1,4 +1,4 @@
-"""The reviewer agent: one local session, one structured verdict (ADR-0010).
+r"""The reviewer agent: one local session, one structured verdict (ADR-0010).
 
 The reviewer is a headless Vibe Code session (``vibe --prompt-file``)
 launched in an ISOLATED empty directory whose only content is the
@@ -27,10 +27,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 REVIEWER_CLI_COMMAND = "vibe"
 REVIEWER_MODEL_VARIABLE = "REVIEWER_MODEL"
@@ -47,7 +50,9 @@ EXIT_CODE_REVIEWED_CLEAN = 0
 EXIT_CODE_BLOCKING_FINDINGS = 1
 EXIT_CODE_PROTOCOL_FAILURE = 2
 
-UNKNOWN_SEVERITY_NOTE = "unknown severity reported by the reviewer - treated as BLOCKING (fail-closed)"
+UNKNOWN_SEVERITY_NOTE = (
+    "unknown severity reported by the reviewer - treated as BLOCKING (fail-closed)"
+)
 
 
 class ReviewProtocolError(RuntimeError):
@@ -164,16 +169,19 @@ def run_reviewer_session(*, model_name: str, bundle_path: Path) -> str:
         (session_directory / SYSTEM_PROMPT_FILE_NAME).write_text(
             SYSTEM_PROMPT_TEXT, encoding="utf-8"
         )
-        (session_directory / PROMPT_FILE_NAME).write_text(
-            REVIEWER_PROMPT_TEXT, encoding="utf-8"
-        )
+        (session_directory / PROMPT_FILE_NAME).write_text(REVIEWER_PROMPT_TEXT, encoding="utf-8")
         command = [
             REVIEWER_CLI_COMMAND,
-            "--prompt-file", str(session_directory / PROMPT_FILE_NAME),
-            "--system-prompt-file", str(session_directory / SYSTEM_PROMPT_FILE_NAME),
-            "--output", "json",
-            "--max-turns", str(MAXIMUM_SESSION_TURNS),
-            "--time-limit", str(load_time_limit_seconds()),
+            "--prompt-file",
+            str(session_directory / PROMPT_FILE_NAME),
+            "--system-prompt-file",
+            str(session_directory / SYSTEM_PROMPT_FILE_NAME),
+            "--output",
+            "json",
+            "--max-turns",
+            str(MAXIMUM_SESSION_TURNS),
+            "--time-limit",
+            str(load_time_limit_seconds()),
         ]
         if model_name:
             command += ["--model", model_name]
@@ -310,15 +318,12 @@ def parse_report(*, answer_text: str) -> list[ReviewFinding]:
     findings_container: object = report_container.get("findings")
     if not isinstance(findings_container, list):
         raise ReviewProtocolError("the report has no findings list")
-    findings = [
-        parse_finding(finding_container=entry) for entry in findings_container
-    ]
-    return findings
+    return [parse_finding(finding_container=entry) for entry in findings_container]
 
 
 def count_by_severity(*, findings: Sequence[ReviewFinding]) -> dict[FindingSeverity, int]:
     """Recompute the counts locally - the session's own counts are never trusted."""
-    counts = {severity: 0 for severity in FindingSeverity}
+    counts = dict.fromkeys(FindingSeverity, 0)
     for finding in findings:
         counts[finding.severity] += 1
     return counts
@@ -393,9 +398,7 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
         bundle_path=Path(arguments.bundle_file),
     )
     try:
-        reported_findings = parse_report(
-            answer_text=narrow_json_answer(answer_text=answer_text)
-        )
+        reported_findings = parse_report(answer_text=narrow_json_answer(answer_text=answer_text))
     except ReviewProtocolError as protocol_error:
         print(
             f"Error: the reviewer answer violated the contract: {protocol_error}",
@@ -419,9 +422,7 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
         "to_fix_count": counts[FindingSeverity.TO_FIX],
         "suggestion_count": counts[FindingSeverity.SUGGESTION],
     }
-    Path(arguments.report_file).write_text(
-        json.dumps(report_payload, indent=2), encoding="utf-8"
-    )
+    Path(arguments.report_file).write_text(json.dumps(report_payload, indent=2), encoding="utf-8")
     if arguments.comment_file is not None:
         Path(arguments.comment_file).write_text(
             render_markdown_comment(findings=findings, counts=counts),

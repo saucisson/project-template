@@ -22,17 +22,21 @@ import json
 import os
 import subprocess
 import sys
-from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import httpx
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 GITHUB_API_BASE_URL = "https://api.github.com"
-GITHUB_TOKEN_VARIABLE = "GITHUB_TOKEN"
+GITHUB_TOKEN_VARIABLE = "GITHUB_TOKEN"  # noqa: S105 - an env var NAME, never a secret
 ENVIRONMENT_FILE_NAME = ".env"
 DEFAULT_REPORT_FILE_NAME = ".review/review-report.json"
 DEFAULT_CONTEXT_FILE_NAME = ".review/review-context.json"
 MERGE_METHOD = "squash"
+METHOD_NOT_ALLOWED_STATUS_CODE = 405
 
 REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 
@@ -169,8 +173,7 @@ def check_review_context(
     context_head_sha = context.get("head_sha")
     if not isinstance(context_head_sha, str) or not context_head_sha:
         print(
-            "Merge refused: the review context has no head SHA - rerun"
-            " `make review`.",
+            "Merge refused: the review context has no head SHA - rerun `make review`.",
             file=sys.stderr,
         )
         raise SystemExit(EXIT_CODE_CRITERIA_UNMET)
@@ -214,8 +217,7 @@ def fetch_check_runs(
 ) -> list[dict[str, object]]:
     """List the CI check runs of the pull request head."""
     response = http_client.get(
-        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}"
-        f"/commits/{head_sha}/check-runs"
+        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/commits/{head_sha}/check-runs"
     )
     if not response.is_success:
         print(
@@ -231,7 +233,7 @@ def fetch_check_runs(
     return [entry for entry in check_runs if isinstance(entry, dict)]
 
 
-def evaluate_merge_criteria(
+def evaluate_merge_criteria(  # noqa: PLR0911 - one return per codified criterion (ADR-0009)
     *,
     report: dict[str, object],
     pull_request: dict[str, object],
@@ -252,8 +254,7 @@ def evaluate_merge_criteria(
         return False, "the pull request is a draft"
     if pull_request.get("mergeable") is not True:
         return False, (
-            "the pull request is not cleanly mergeable - rebase it on"
-            " daily and rerun the review"
+            "the pull request is not cleanly mergeable - rebase it on daily and rerun the review"
         )
     if len(check_runs) == 0:
         return False, "no CI check runs on the head - wait for CI, or push first"
@@ -275,13 +276,12 @@ def merge_pull_request(
 ) -> bool:
     """Squash-merge the pull request; return success, or fail closed."""
     response = http_client.put(
-        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}"
-        f"/pulls/{pull_request_number}/merge",
+        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/pulls/{pull_request_number}/merge",
         json={"sha": head_sha, "merge_method": MERGE_METHOD},
     )
     if response.is_success:
         return True
-    if response.status_code == 405:
+    if response.status_code == METHOD_NOT_ALLOWED_STATUS_CODE:
         payload = response.json() if response.text else {}
         message = (
             payload.get("message", "not mergeable")
@@ -307,8 +307,7 @@ def delete_branch(
     if not head_ref:
         return
     response = http_client.delete(
-        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}"
-        f"/git/refs/heads/{head_ref}"
+        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/git/refs/heads/{head_ref}"
     )
     if not response.is_success:
         print(f"Warning: could not delete branch {head_ref} (status {response.status_code}).")
@@ -359,16 +358,8 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
             pull_request_number=arguments.pr_number,
         )
         head_container = pull_request.get("head")
-        head_sha = (
-            head_container.get("sha", "")
-            if isinstance(head_container, dict)
-            else ""
-        )
-        head_ref = (
-            head_container.get("ref", "")
-            if isinstance(head_container, dict)
-            else ""
-        )
+        head_sha = head_container.get("sha", "") if isinstance(head_container, dict) else ""
+        head_ref = head_container.get("ref", "") if isinstance(head_container, dict) else ""
         if not head_sha:
             print("Error: the pull request has no head SHA.", file=sys.stderr)
             return EXIT_CODE_PROTOCOL_FAILURE

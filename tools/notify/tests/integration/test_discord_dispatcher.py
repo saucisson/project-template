@@ -6,8 +6,7 @@ with ``-m 'not integration'``.
 """
 
 import json
-from collections.abc import Any
-from typing import Any as TypingAny
+from typing import Any
 
 import httpx
 import pytest
@@ -58,7 +57,7 @@ class TestDiscordWebhookDispatcher:
         assert outcome.delivery_channel is DeliveryChannel.DISCORD
         assert str(received_requests[0].url) == WEBHOOK_URL
         assert received_requests[0].method == "POST"
-        payload: dict[str, TypingAny] = json.loads(received_requests[0].content)
+        payload: dict[str, Any] = json.loads(received_requests[0].content)
         assert payload["embeds"][0]["description"] == MESSAGE_TEXT
 
     def test_server_error_reports_failure(self) -> None:
@@ -93,9 +92,7 @@ class TestDiscordWebhookDispatcher:
 
 
 class TestConsoleDispatcher:
-    def test_dispatch_logs_the_embed(
-        self, capture_logs: list[dict[str, Any]]
-    ) -> None:
+    def test_dispatch_logs_the_embed(self, capture_logs: list[dict[str, Any]]) -> None:
         dispatcher = ConsoleDispatcher()
         message = build_discord_message(request=request_with_message(MESSAGE_TEXT))
 

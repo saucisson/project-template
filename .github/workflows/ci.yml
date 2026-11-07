@@ -51,6 +51,9 @@ jobs:
 
       - name: gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
+        env:
+          # Required by gitleaks-action to read pull request history.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: pip-audit of the locked graph
         run: |

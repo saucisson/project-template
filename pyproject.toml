@@ -22,11 +22,11 @@ dev = [
     "hypothesis>=6.130",
     "import-linter>=2.3",
     "mutmut>=3.3",
-    "mypy>=1.19",
+    "mypy>=2.4",
     "pre-commit>=4.2",
     "pytest>=8.4",
     "pytest-cov>=7.0",
-    "ruff>=0.12",
+    "ruff>=0.17",
 ]
 
 [build-system]
@@ -79,6 +79,17 @@ ignore = [
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
+# On Python 3.15 (PEP 649) annotations are deferred by default, so
+# annotation-only imports can live in TYPE_CHECKING blocks at zero
+# runtime cost - EXCEPT where the class introspects its own fields at
+# definition time: pydantic models and settings need their annotation
+# imports at runtime, hence the exemption below (ADR-0006).
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_settings.BaseSettings",
+]
+
 [tool.ruff.lint.pylint]
 max-args = 8
 
@@ -91,10 +102,11 @@ convention = "google"
 # S101: the narrowing assertion in select_dispatcher is the mypy-canonical
 # pattern for Optional narrowing after an early return.
 "tools/notify/src/notify/main.py" = ["T201", "S101"]
-# scripts/*: T201 stdout is the interface, T202 stderr carries the failure
+# scripts/*: T201 stdout is the interface, stderr carries the failure
 # reason; S603 git/uv are invoked with fixed literals, no untrusted input
-# ever reaches argv.
-"scripts/*" = ["T201", "T202", "S603"]
+# ever reaches argv; S607 git/uv are resolved through PATH, like every
+# documented git invocation (trusted machine, not a seccomp boundary).
+"scripts/*" = ["T201", "S603", "S607"]
 "tools/notify/tests/*" = [
     "S101",     # asserts are the point of tests
     "D",        # docstrings optional in tests
