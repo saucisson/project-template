@@ -57,7 +57,10 @@ def configure_logging(*, settings: ApplicationSettings) -> None:
         add_logger_name,
         TimeStamper(fmt="iso"),
     ]
-    logging.basicConfig(stream=sys.stdout, level=settings.log_level)
+    # force=True: the composition root owns the root logger (ADR-0005), so
+    # pre-existing handlers (e.g. a test runner's capture handler) are
+    # replaced instead of silently kept, which would make basicConfig a no-op.
+    logging.basicConfig(stream=sys.stdout, level=settings.log_level, force=True)
     if settings.log_format is LogFormat.JSON:
         event_renderer: Processor = JSONRenderer()
     else:
