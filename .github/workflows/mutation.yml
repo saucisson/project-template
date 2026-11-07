@@ -3,6 +3,10 @@ name: mutation-testing
 # ADR-0012: mutation testing runs on `daily` at end of day, before the
 # human review - coverage proves execution, mutants prove assertions.
 # Surviving mutants become issues for the next working day.
+#
+# A fresh instance has no `daily` branch until the day cycle starts
+# (docs/branching.md): the gate job skips the scheduled run instead of
+# failing it, and turns itself on once `daily` exists.
 
 on:
   schedule:
@@ -13,8 +17,29 @@ permissions:
   contents: read
 
 jobs:
+  gate:
+    name: gate - daily must exist
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    steps:
+      - name: Check that the daily branch exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if gh api "repos/$REPOSITORY/branches/daily" >/dev/null 2>&1; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No daily branch yet - skipping this run."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   mutate:
     name: mutmut on daily
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

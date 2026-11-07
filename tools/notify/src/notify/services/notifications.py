@@ -4,13 +4,14 @@ Every ``DEBUG`` event here is an executable comment (ADR-0005) - the tests
 pin them, so the narration cannot rot the way prose comments do.
 """
 
-from typing import TypeIs
 from collections.abc import Mapping
+from typing import TypeIs, assert_never
 
 import structlog
 
 from notify.models.notification import (
     DeliveryFailure,
+    DiscordEmbed,
     DiscordEmbedField,
     DiscordMessage,
     NotificationOutcome,

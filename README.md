@@ -73,11 +73,15 @@ architecture and style rules (ADR-0014).
 1. Clone **inside the WSL/Linux filesystem** (`~/...`), never on
    `/mnt/c` (also an I/O question). On WSL, mount Windows drives
    read-only or not at all: `/etc/wsl.conf` → `[automount]`.
-2. `uv sync` to generate `uv.lock` (commit it - ADR-0001).
+2. `uv sync` - the environment comes from the committed `uv.lock`
+   (ADR-0001). To change it: `uv lock`, then commit the updated
+   lockfile.
 3. At the first Vibe Code session, review `.vibe/config.toml` and
    **trust the folder** - the runtime permissions profile is then
    loaded (ADR-0015). Keep the CLI current before widening it.
-4. Enable branch protections per `docs/branching.md` (`main` and
+4. Create the `daily` branch from `main`
+   (`git branch daily && git push -u origin daily`), then enable
+   branch protections per `docs/branching.md` (`main` and
    `daily`, required `check` and `security` status checks, linear
    history; no auto-merge, no reviewer check - ADR-0010, ADR-0009).
 5. `uv run pre-commit install`.
