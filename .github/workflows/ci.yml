@@ -55,6 +55,9 @@ jobs:
           # Required by gitleaks-action to read pull request history.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
       - name: pip-audit of the locked graph
         run: |
           uv export --locked --format requirements-txt --output-file requirements.txt
