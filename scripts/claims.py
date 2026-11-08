@@ -145,7 +145,7 @@ def add_claim_label(
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the claim subcommand: exactly one item, issue or pull request."""
     subparser = subparsers.add_parser(
         "claim",

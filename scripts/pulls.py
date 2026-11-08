@@ -107,7 +107,7 @@ def open_pull_request(
     raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
 
 
-def register_pr(subparsers: argparse._SubParsersAction) -> None:
+def register_pr(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the pr subcommand."""
     subparser = subparsers.add_parser(
         "pr",
@@ -243,7 +243,7 @@ def write_body(
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
 
 
-def register_update_pr(subparsers: argparse._SubParsersAction) -> None:
+def register_update_pr(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the update-pr subcommand."""
     subparser = subparsers.add_parser(
         "update-pr",
@@ -264,7 +264,7 @@ def register_update_pr(subparsers: argparse._SubParsersAction) -> None:
     subparser.set_defaults(runner=run_update_pr)
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register both pull request subcommands."""
     register_pr(subparsers)
     register_update_pr(subparsers)

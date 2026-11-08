@@ -251,7 +251,7 @@ def delete_branch(
         print(f"Warning: could not delete branch {head_ref} (status {response.status_code}).")
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the merge-pr subcommand."""
     subparser = subparsers.add_parser(
         "merge-pr",

@@ -67,3 +67,11 @@ One entry per commit or pull request:
 - **Evidence**: `make check` green (ruff, mypy strict, import-linter, pytest 33 passed, coverage 94.76%). Not run: a live night loop or a real PR body update against the GitHub API.
 - **Judgement calls**: the change touches constitutional files (docs/decisions/, docs/agents/, docs/review-checklist.md) - done under explicit human instruction in this session.
 - **Escalations**: none.
+
+## 2026-11-08 - type fixes for the subcommand refactor
+
+- **Issue**: none (human request: PR + merge the two commits).
+- **Done**: the two commits (sync-daily script, subcommand refactor) failed mypy strict with 15 errors; fixed by parameterizing `argparse._SubParsersAction[argparse.ArgumentParser]` and replacing the explicit-Any `Callable[..., int]` in `scripts/__main__.py`.
+- **Evidence**: `make check` green after the fix (ruff, mypy strict 34 files, import-linter, pytest 33 passed, coverage 94.76%).
+- **Judgement calls**: fixes committed as a separate commit on the branch rather than rewriting the human's commits.
+- **Escalations**: none.

@@ -194,7 +194,7 @@ def enforce_budget_arguments(*, arguments: argparse.Namespace) -> None:
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the wait-ci subcommand."""
     subparser = subparsers.add_parser(
         "wait-ci",

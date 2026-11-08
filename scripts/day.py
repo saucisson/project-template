@@ -128,7 +128,7 @@ def render_report(
     return "\n".join(report_sections)
 
 
-def register_day_report(subparsers: argparse._SubParsersAction) -> None:
+def register_day_report(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the day-report subcommand."""
     subparser = subparsers.add_parser(
         "day-report",
@@ -318,7 +318,7 @@ def rebase_daily_onto_main(*, previous_head: str, daily_only_before: int) -> int
     return push_exit_code
 
 
-def register_sync_daily(subparsers: argparse._SubParsersAction) -> None:
+def register_sync_daily(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the sync-daily subcommand."""
     subparser = subparsers.add_parser(
         "sync-daily",
@@ -328,7 +328,7 @@ def register_sync_daily(subparsers: argparse._SubParsersAction) -> None:
     subparser.set_defaults(runner=run_sync_daily)
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register both day-cycle subcommands."""
     register_day_report(subparsers)
     register_sync_daily(subparsers)

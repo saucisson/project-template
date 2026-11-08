@@ -93,7 +93,7 @@ def render_bundle(
     return SECTION_SEPARATOR.join(sections)
 
 
-def register_review_bundle(subparsers: argparse._SubParsersAction) -> None:
+def register_review_bundle(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the review-bundle subcommand: one diff source, optional description."""
     subparser = subparsers.add_parser(
         "review-bundle",
@@ -253,7 +253,7 @@ def post_review_comment(
         )
 
 
-def register_review(subparsers: argparse._SubParsersAction) -> None:
+def register_review(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the review subcommand."""
     subparser = subparsers.add_parser(
         "review",
@@ -269,7 +269,7 @@ def register_review(subparsers: argparse._SubParsersAction) -> None:
     subparser.set_defaults(runner=run_review)
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register both review subcommands."""
     register_review(subparsers)
     register_review_bundle(subparsers)

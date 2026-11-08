@@ -486,7 +486,7 @@ class NightJournal:
         self.log(text=text)
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the night subcommand."""
     subparser = subparsers.add_parser(
         "night",

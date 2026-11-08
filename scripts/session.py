@@ -367,7 +367,7 @@ def render_markdown_comment(
     return "\n".join(comment_sections)
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the agent-review subcommand."""
     subparser = subparsers.add_parser(
         "agent-review",
