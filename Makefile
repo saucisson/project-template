@@ -79,8 +79,8 @@ claim-pr: ## Claim a pull request before resuming it (night recovery): PR=N (ADR
 wait-ci: ## Actively wait for CI on the pull request head: PR=N (ADR-0018).
 	$(PYTHON) scripts/wait_ci.py --pr-number "$(PR)"
 
-night: ## Run the unattended loop: ISSUES="12,13,14" or auto-discovery when empty (ADR-0017).
-	$(PYTHON) scripts/night_loop.py --issues "$(ISSUES)"
+night: ## Run the unattended loop: ISSUES="12,13,14", MILESTONES="3,4", or auto-discovery when empty (ADR-0017).
+	$(PYTHON) scripts/night_loop.py --issues "$(ISSUES)" --milestones "$(MILESTONES)"
 
 review-bundle: ## Print the reviewer bundle against origin/daily (ADR-0010).
 	$(PYTHON) scripts/build_review_bundle.py --base-ref origin/daily

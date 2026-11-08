@@ -36,6 +36,7 @@ requests, the issues) for the morning audit.
 Usage::
 
     make night ISSUES=12,13,14
+    make night MILESTONES=3,4
     make night
 """
 
@@ -161,6 +162,39 @@ def parse_issue_list(*, raw_issue_list: str) -> list[int]:
     return issue_numbers
 
 
+def parse_milestone_list(*, raw_milestone_list: str) -> set[int]:
+    """Parse the milestone filter: comma-separated milestone numbers.
+
+    An empty list means no filtering; anything else must be digits.
+    """
+    milestone_numbers: set[int] = set()
+    for raw_number in raw_milestone_list.split(","):
+        stripped_number = raw_number.strip()
+        if not stripped_number:
+            continue
+        if not stripped_number.isdigit():
+            print(f"Error: not a milestone number: {stripped_number}.", file=sys.stderr)
+            raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
+        milestone_numbers.add(int(stripped_number))
+    return milestone_numbers
+
+
+def item_milestone_number(*, item: dict[str, object]) -> int | None:
+    """Return the milestone number of an issue or pull request, if any."""
+    milestone = item.get("milestone")
+    if not isinstance(milestone, dict):
+        return None
+    number = milestone.get("number")
+    return number if isinstance(number, int) else None
+
+
+def milestone_matches(*, item: dict[str, object], milestone_numbers: set[int]) -> bool:
+    """Tell whether an item passes the milestone filter (empty set = all)."""
+    if not milestone_numbers:
+        return True
+    return item_milestone_number(item=item) in milestone_numbers
+
+
 def read_integer_setting(*, variable_name: str, default_value: int) -> int:
     """Read an integer environment setting; an invalid value fails closed."""
     raw_value = os.environ.get(variable_name, "").strip()
@@ -227,8 +261,9 @@ def fetch_candidate_issues(
     http_client: httpx.Client,
     repository_slug: str,
     candidate_limit: int,
+    milestone_numbers: set[int],
 ) -> list[tuple[int, dict[str, object]]]:
-    """Derive the auto-discovered worklist: open, eligible, unclaimed."""
+    """Derive the auto-discovered worklist: open, eligible, unclaimed, in scope."""
     response = http_client.get(
         f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/issues",
         params={"state": "open", "per_page": OPEN_ISSUES_PAGE_SIZE},
@@ -245,6 +280,8 @@ def fetch_candidate_issues(
         if not isinstance(issue, dict):
             continue
         if triage_issue(issue=issue) is not None:
+            continue
+        if not milestone_matches(item=issue, milestone_numbers=milestone_numbers):
             continue
         issue_number = issue.get("number")
         if not isinstance(issue_number, int):
@@ -285,6 +322,7 @@ def fetch_candidate_pull_requests(
     http_client: httpx.Client,
     repository_slug: str,
     candidate_limit: int,
+    milestone_numbers: set[int],
 ) -> list[tuple[int, dict[str, object]]]:
     """Derive the recoverable pull requests (ADR-0017 recovery path).
 
@@ -317,6 +355,8 @@ def fetch_candidate_pull_requests(
         if not isinstance(pr_number, int):
             continue
         if item_has_claim_label(item=pull_request):
+            continue
+        if not milestone_matches(item=pull_request, milestone_numbers=milestone_numbers):
             continue
         head = pull_request.get("head")
         head_ref = head.get("ref") if isinstance(head, dict) else None
@@ -464,6 +504,12 @@ def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namesp
         " session picks one unclaimed open issue and claims it (auto-discovery).",
     )
     argument_parser.add_argument(
+        "--milestones",
+        default="",
+        help='Comma-separated milestone numbers, e.g. "3,4". Only issues and pull'
+        " requests of these milestones are worked. Omit it for no filtering.",
+    )
+    argument_parser.add_argument(
         "--max-turns",
         type=int,
         default=read_integer_setting(
@@ -508,6 +554,7 @@ def run_explicit_directive(
     prompt_directory: Path,
     repository_slug: str,
     issue_numbers: Sequence[int],
+    milestone_numbers: set[int],
     prompt_template: str,
     arguments: argparse.Namespace,
     results: list[str],
@@ -524,6 +571,10 @@ def run_explicit_directive(
             results.append(f"Issue #{issue_number}: skipped - could not fetch it")
             continue
         skip_reason = triage_issue(issue=issue)
+        if skip_reason is None and not milestone_matches(
+            item=issue, milestone_numbers=milestone_numbers
+        ):
+            skip_reason = "it is not in the requested milestones"
         if skip_reason:
             print(f"Skipped: {skip_reason}.")
             results.append(f"Issue #{issue_number}: skipped - {skip_reason}")
@@ -555,6 +606,7 @@ def run_auto_discovered_sessions(
     http_client: httpx.Client,
     prompt_directory: Path,
     repository_slug: str,
+    milestone_numbers: set[int],
     prompt_template: str,
     arguments: argparse.Namespace,
     results: list[str],
@@ -579,11 +631,13 @@ def run_auto_discovered_sessions(
             http_client=http_client,
             repository_slug=repository_slug,
             candidate_limit=arguments.candidates,
+            milestone_numbers=milestone_numbers,
         )
         pull_requests = fetch_candidate_pull_requests(
             http_client=http_client,
             repository_slug=repository_slug,
             candidate_limit=arguments.candidates,
+            milestone_numbers=milestone_numbers,
         )
         if not issues and not pull_requests:
             print("\nNo unclaimed eligible item left - the night is done.")
@@ -620,11 +674,13 @@ def run_auto_discovered_sessions(
             http_client=http_client,
             repository_slug=repository_slug,
             candidate_limit=arguments.candidates,
+            milestone_numbers=milestone_numbers,
         )
         fresh_pull_requests = fetch_candidate_pull_requests(
             http_client=http_client,
             repository_slug=repository_slug,
             candidate_limit=arguments.candidates,
+            milestone_numbers=milestone_numbers,
         )
         candidate_keys = auto_candidate_keys(issues=issues, pull_requests=pull_requests)
         fresh_keys = auto_candidate_keys(issues=fresh_issues, pull_requests=fresh_pull_requests)
@@ -655,6 +711,7 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
         )
         return EXIT_CODE_PROTOCOL_FAILURE
     repository_slug = resolve_repository_slug()
+    milestone_numbers = parse_milestone_list(raw_milestone_list=arguments.milestones)
     results: list[str] = []
     with (
         httpx.Client(
@@ -674,6 +731,7 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
                 prompt_directory=Path(prompt_directory),
                 repository_slug=repository_slug,
                 issue_numbers=issue_numbers,
+                milestone_numbers=milestone_numbers,
                 prompt_template=prompt_template,
                 arguments=arguments,
                 results=results,
@@ -684,6 +742,7 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
                 http_client=http_client,
                 prompt_directory=Path(prompt_directory),
                 repository_slug=repository_slug,
+                milestone_numbers=milestone_numbers,
                 prompt_template=prompt_template,
                 arguments=arguments,
                 results=results,
