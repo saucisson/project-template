@@ -39,15 +39,8 @@ verbose trace (full candidate lists, anti-spin decisions, fetch
 warnings) lands in ``.night/night-loop.log`` (override it with
 ``NIGHT_LOG_FILE``). The morning audit reads the terminal; the
 post-mortem reads the log.
-
-Usage::
-
-    make night ISSUES=12,13,14
-    make night MILESTONES=3,4
-    make night
 """
 
-import argparse
 import dataclasses
 import os
 import re
@@ -59,14 +52,24 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import httpx
+from scripts._github import open_github_client
+from scripts._shared import (
+    CLAIM_LABEL_NAME,
+    EXIT_CODE_PROTOCOL_FAILURE,
+    EXIT_CODE_SUCCESS,
+    GITHUB_API_BASE_URL,
+    REPOSITORY_ROOT,
+    load_github_token,
+    resolve_repository_slug,
+)
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Sequence
 
-GITHUB_API_BASE_URL = "https://api.github.com"
-GITHUB_TOKEN_VARIABLE = "GITHUB_TOKEN"  # noqa: S105 - an env var NAME, never a secret
-ENVIRONMENT_FILE_NAME = ".env"
+    import httpx
+
+EXIT_CODE_ALL_ISSUES_PROCESSED = EXIT_CODE_SUCCESS  # a subcommand-local alias, same protocol code
 DEVELOPER_CLI_COMMAND = "vibe"
 PROMPT_TEMPLATE_PATH = ".vibe/prompts/night-issue.md"
 AUTO_PROMPT_TEMPLATE_PATH = ".vibe/prompts/night-auto.md"
@@ -88,68 +91,7 @@ OPEN_ISSUES_PAGE_SIZE = 100
 OPEN_PULL_REQUESTS_PAGE_SIZE = 100
 DAILY_BRANCH_NAME = "daily"
 NIGHT_HEAD_BRANCH_PATTERN = re.compile(r"^(?:feat|fix)/(\d+)(?:-.*)?$")
-TRIAGE_SKIP_LABELS = ("blocked", "needs-human", "night-claimed")
-CLAIM_LABEL_NAME = "night-claimed"
-
-REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
-
-EXIT_CODE_ALL_ISSUES_PROCESSED = 0
-EXIT_CODE_PROTOCOL_FAILURE = 2
-
-
-def load_environment_file() -> None:
-    """Read KEY=VALUE pairs from .env into the environment if unset."""
-    environment_path = REPOSITORY_ROOT / ENVIRONMENT_FILE_NAME
-    if not environment_path.is_file():
-        return
-    for raw_line in environment_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        os.environ.setdefault(key.strip(), value.strip())
-
-
-def load_github_token() -> str:
-    """Read the GitHub token; absent means protocol failure."""
-    github_token = os.environ.get(GITHUB_TOKEN_VARIABLE, "").strip()
-    if not github_token:
-        print(
-            f"Error: {GITHUB_TOKEN_VARIABLE} is not set - cannot fetch the"
-            " issues of the night directive.",
-            file=sys.stderr,
-        )
-        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
-    return github_token
-
-
-def resolve_repository_slug() -> str:
-    """Return "owner/repository" from the origin remote, or fail closed."""
-    completed_process = subprocess.run(
-        ["git", "remote", "get-url", "origin"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    remote_url = completed_process.stdout.strip()
-    marker = "github.com"
-    separator_index = remote_url.find(marker)
-    if separator_index == -1:
-        print(
-            f"Error: the origin remote is not on GitHub: {remote_url}",
-            file=sys.stderr,
-        )
-        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
-    slug = remote_url[separator_index + len(marker) :]
-    slug = slug.removeprefix(":").removeprefix("/").removesuffix(".git").strip("/")
-    owner, separator, repository = slug.partition("/")
-    if not owner or not separator or not repository.strip("/"):
-        print(
-            f"Error: cannot parse owner/repository from remote: {remote_url}",
-            file=sys.stderr,
-        )
-        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
-    return f"{owner}/{repository.strip('/')}"
+TRIAGE_SKIP_LABELS = ("blocked", "needs-human", CLAIM_LABEL_NAME)
 
 
 def parse_issue_list(*, raw_issue_list: str) -> list[int]:
@@ -544,25 +486,26 @@ class NightJournal:
         self.log(text=text)
 
 
-def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namespace:
-    """Parse the script contract."""
-    argument_parser = argparse.ArgumentParser(
-        prog="night_loop",
+def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register the night subcommand."""
+    subparser = subparsers.add_parser(
+        "night",
+        help="Run the unattended day loop, one session per issue (ADR-0017).",
         description="Run the unattended day loop, one session per issue (ADR-0017).",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--issues",
         default="",
         help='Comma-separated issue numbers, e.g. "12,13,14". Omit it and each'
         " session picks one unclaimed open issue and claims it (auto-discovery).",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--milestones",
         default="",
         help='Comma-separated milestone numbers, e.g. "3,4". Only issues and pull'
         " requests of these milestones are worked. Omit it for no filtering.",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--max-turns",
         type=int,
         default=read_integer_setting(
@@ -571,7 +514,7 @@ def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namesp
         ),
         help="Maximum assistant turns per session.",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--time-limit",
         type=int,
         default=read_integer_setting(
@@ -580,7 +523,7 @@ def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namesp
         ),
         help="Time limit per session, in seconds.",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--max-sessions",
         type=int,
         default=read_integer_setting(
@@ -589,7 +532,7 @@ def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namesp
         ),
         help="Auto-discovery only: maximum number of sessions (one issue each).",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--candidates",
         type=int,
         default=read_integer_setting(
@@ -598,7 +541,7 @@ def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namesp
         ),
         help="Auto-discovery only: issues listed in each session's worklist.",
     )
-    return argument_parser.parse_args(command_line_arguments)
+    subparser.set_defaults(runner=run)
 
 
 def run_explicit_directive(
@@ -788,10 +731,8 @@ def run_auto_discovered_sessions(
         )
 
 
-def main(*, command_line_arguments: Sequence[str]) -> int:
+def run(*, arguments: argparse.Namespace) -> int:
     """Entry point: night directive in (or auto-discovered), report out."""
-    load_environment_file()
-    arguments = parse_arguments(command_line_arguments=command_line_arguments)
     github_token = load_github_token()
     if shutil.which(DEVELOPER_CLI_COMMAND) is None:
         print(
@@ -812,13 +753,7 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
         ),
     )
     with (
-        httpx.Client(
-            headers={
-                "Authorization": f"Bearer {github_token}",
-                "Accept": "application/vnd.github.v3+json",
-            },
-            timeout=30.0,
-        ) as http_client,
+        open_github_client(token=github_token) as http_client,
         tempfile.TemporaryDirectory(prefix="night-loop-") as prompt_directory,
     ):
         if arguments.issues:
@@ -853,7 +788,3 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
         text=f"night loop finished: {len(journal.summary_lines)} result line(s) on stdout",
     )
     return EXIT_CODE_ALL_ISSUES_PROCESSED
-
-
-if __name__ == "__main__":
-    sys.exit(main(command_line_arguments=sys.argv[1:]))

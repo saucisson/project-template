@@ -47,7 +47,7 @@ day-start: ## Tag the morning restore point on `daily` (docs/branching.md).
 	git tag "$(DAY_TAG)"
 
 day-report: ## Print the end-of-day report since the morning tag.
-	$(PYTHON) scripts/day_report.py --since-tag "$(DAY_TAG)"
+	$(PYTHON) -m scripts day-report --since-tag "$(DAY_TAG)"
 
 smoke-test: ## Verify the notification pipeline via console delivery.
 	$(CONSOLE_SCRIPT) smoke
@@ -62,34 +62,34 @@ notify: ## Notify the owner: make notify severity=... message=... [issue-identif
 		--issue-identifier "$(issue_identifier)"
 
 review: ## Run the local reviewer session on pull request PR=N (ADR-0010).
-	$(PYTHON) scripts/pr_review.py --pr-number $(PR)
+	$(PYTHON) -m scripts review --pr-number $(PR)
 
 merge-pr: ## Merge pull request PR=N into daily after review and CI (ADR-0009).
-	$(PYTHON) scripts/merge_pr.py --pr-number $(PR)
+	$(PYTHON) -m scripts merge-pr --pr-number $(PR)
 
 pr: ## Open the pull request from the current branch: TITLE=... [BODY_FILE=...] (ADR-0017).
-	$(PYTHON) scripts/open_pr.py --title "$(TITLE)" --body-file "$(BODY_FILE)"
+	$(PYTHON) -m scripts pr --title "$(TITLE)" --body-file "$(BODY_FILE)"
 
 claim: ## Claim an issue before working it (auto-discovered night sessions): ISSUE=N (ADR-0017).
-	$(PYTHON) scripts/claim_issue.py --issue "$(ISSUE)"
+	$(PYTHON) -m scripts claim --issue "$(ISSUE)"
 
 claim-pr: ## Claim a pull request before resuming it (night recovery): PR=N (ADR-0017).
-	$(PYTHON) scripts/claim_issue.py --pr "$(PR)"
+	$(PYTHON) -m scripts claim --pr "$(PR)"
 
 update-pr: ## Replace a pull request body from a file: PR=N BODY_FILE=... (ADR-0019).
-	$(PYTHON) scripts/update_pr.py --pr-number "$(PR)" --body-file "$(BODY_FILE)"
+	$(PYTHON) -m scripts update-pr --pr-number "$(PR)" --body-file "$(BODY_FILE)"
 
 sync-daily: ## Rebase daily onto origin/main, early in the day, push with lease (ADR-0020).
-	$(PYTHON) scripts/sync_daily.py
+	$(PYTHON) -m scripts sync-daily
 
 wait-ci: ## Actively wait for CI on the pull request head: PR=N (ADR-0018).
-	$(PYTHON) scripts/wait_ci.py --pr-number "$(PR)"
+	$(PYTHON) -m scripts wait-ci --pr-number "$(PR)"
 
 night: ## Run the unattended loop: ISSUES="12,13,14", MILESTONES="3,4", or auto-discovery when empty (ADR-0017).
-	$(PYTHON) scripts/night_loop.py --issues "$(ISSUES)" --milestones "$(MILESTONES)"
+	$(PYTHON) -m scripts night --issues "$(ISSUES)" --milestones "$(MILESTONES)"
 
 review-bundle: ## Print the reviewer bundle against origin/daily (ADR-0010).
-	$(PYTHON) scripts/build_review_bundle.py --base-ref origin/daily
+	$(PYTHON) -m scripts review-bundle --base-ref origin/daily
 
 clean: ## Remove caches, build outputs and mutation cache.
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .mutmut-cache htmlcov \

@@ -36,7 +36,7 @@ human performed the rebase by hand.
   on a day session until the human is available - while `main`'s
   content is, by definition, already human-accepted.
 - **An agent rebase through a fail-closed driver** (chosen):
-  `make sync-daily` (`scripts/sync_daily.py`) makes the rebase the one
+  `make sync-daily` makes the rebase the one
   sanctioned rewrite of `daily`, the way `make update-pr` is the one
   body-update path (ADR-0019): mechanical guards first, verify the
   result, then push with a lease.

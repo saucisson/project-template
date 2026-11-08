@@ -49,7 +49,7 @@ uv run notify send --severity question --message "Need a decision on X." --issue
 | Branch model      | `docs/branching.md` (ADR-0009) |
 | Agent runtime     | `.vibe/` permissions profile - ADR-0015 |
 | Human contact     | the `notify` command in `tools/notify/` - ADR-0011, ADR-0014 |
-| Decisions         | `docs/decisions/` - 20 ADRs (0001-0099); project ADRs start at 0100 |
+| Decisions         | `docs/decisions/` - 21 ADRs (0001-0099); project ADRs start at 0100 |
 
 ## The repository layout
 

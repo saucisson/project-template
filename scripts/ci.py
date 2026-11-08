@@ -7,38 +7,38 @@ this driver blocks, polls the head's CI check runs, and returns a
 verdict:
 
 - exit 0: every check run on the head concluded "success" - the exact
-  precondition `scripts/pr_review.py` enforces, so the session can
-  chain `make review PR=N` right after;
+  precondition the review driver (``make review``) enforces, so the
+  session can chain it right after;
 - exit 1: CI failed on the head, or did not conclude within the
   timeout - the honest stop: fix, push, wait again;
-- exit 2: protocol failure (no token, pull request not found or
-  never reachable within the timeout, nonsensical budgets).
+- exit 2: protocol failure (no token, pull request not found or never
+  reachable within the timeout, nonsensical budgets).
 
 The wait follows the CURRENT head: if the branch is re-pushed while
 waiting, the driver switches to the new head and keeps waiting -
 exactly like the review, it never judges a stale head.
-
-Usage::
-
-    make wait-ci PR=53
 """
 
-import argparse
 import os
-import subprocess
 import sys
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-import httpx
+from scripts._github import extract_head_sha, open_github_client
+from scripts._shared import (
+    EXIT_CODE_CRITERIA_UNMET,
+    EXIT_CODE_PROTOCOL_FAILURE,
+    EXIT_CODE_SUCCESS,
+    GITHUB_API_BASE_URL,
+    load_github_token,
+    resolve_repository_slug,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    import argparse
 
-GITHUB_API_BASE_URL = "https://api.github.com"
-GITHUB_TOKEN_VARIABLE = "GITHUB_TOKEN"  # noqa: S105 - an env var NAME, never a secret
-ENVIRONMENT_FILE_NAME = ".env"
+    import httpx
+
 POLL_INTERVAL_VARIABLE = "WAIT_CI_INTERVAL_SECONDS"
 TIMEOUT_VARIABLE = "WAIT_CI_TIMEOUT_SECONDS"
 DEFAULT_POLL_INTERVAL_SECONDS = 20
@@ -51,66 +51,8 @@ POLL_STATUS_PENDING = "pending"
 POLL_STATUS_GREEN = "green"
 POLL_STATUS_FAILED = "failed"
 
-REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
-
-EXIT_CODE_GREEN = 0
-EXIT_CODE_CI_FAILED = 1
-EXIT_CODE_PROTOCOL_FAILURE = 2
-
-
-def load_environment_file() -> None:
-    """Read KEY=VALUE pairs from .env into the environment if unset."""
-    environment_path = REPOSITORY_ROOT / ENVIRONMENT_FILE_NAME
-    if not environment_path.is_file():
-        return
-    for raw_line in environment_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        os.environ.setdefault(key.strip(), value.strip())
-
-
-def load_github_token() -> str:
-    """Read the GitHub token; absent means protocol failure."""
-    github_token = os.environ.get(GITHUB_TOKEN_VARIABLE, "").strip()
-    if not github_token:
-        print(
-            f"Error: {GITHUB_TOKEN_VARIABLE} is not set - cannot watch CI"
-            " (fine-grained PAT: pull requests read, repository contents read).",
-            file=sys.stderr,
-        )
-        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
-    return github_token
-
-
-def resolve_repository_slug() -> str:
-    """Return "owner/repository" from the origin remote, or fail closed."""
-    completed_process = subprocess.run(
-        ["git", "remote", "get-url", "origin"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    remote_url = completed_process.stdout.strip()
-    marker = "github.com"
-    separator_index = remote_url.find(marker)
-    if separator_index == -1:
-        print(
-            f"Error: the origin remote is not on GitHub: {remote_url}",
-            file=sys.stderr,
-        )
-        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
-    slug = remote_url[separator_index + len(marker) :]
-    slug = slug.removeprefix(":").removeprefix("/").removesuffix(".git").strip("/")
-    owner, separator, repository = slug.partition("/")
-    if not owner or not separator or not repository.strip("/"):
-        print(
-            f"Error: cannot parse owner/repository from remote: {remote_url}",
-            file=sys.stderr,
-        )
-        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
-    return f"{owner}/{repository.strip('/')}"
+EXIT_CODE_GREEN = EXIT_CODE_SUCCESS  # a subcommand-local alias, same protocol code
+EXIT_CODE_CI_FAILED = EXIT_CODE_CRITERIA_UNMET  # CI red or timed out: criteria unmet
 
 
 def try_fetch_pull_request(
@@ -134,16 +76,6 @@ def try_fetch_pull_request(
         return None
     pull_request: object = response.json()
     return pull_request if isinstance(pull_request, dict) else None
-
-
-def extract_head_sha(*, pull_request: dict[str, object]) -> str:
-    """Return the pull request head SHA, or fail closed."""
-    head_container = pull_request.get("head")
-    head_sha = head_container.get("sha", "") if isinstance(head_container, dict) else ""
-    if not head_sha:
-        print("Error: the pull request has no head SHA.", file=sys.stderr)
-        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
-    return head_sha
 
 
 def try_fetch_check_runs(
@@ -262,19 +194,20 @@ def enforce_budget_arguments(*, arguments: argparse.Namespace) -> None:
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
 
 
-def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namespace:
-    """Parse the script contract."""
-    argument_parser = argparse.ArgumentParser(
-        prog="wait_ci",
+def register(subparsers: argparse._SubParsersAction) -> None:
+    """Register the wait-ci subcommand."""
+    subparser = subparsers.add_parser(
+        "wait-ci",
+        help="Block until CI concludes on the pull request head (ADR-0018).",
         description="Block until CI concludes on the pull request head (ADR-0018).",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--pr-number",
         type=int,
         required=True,
         help="Number of the pull request to watch.",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--interval-seconds",
         type=int,
         default=read_integer_setting(
@@ -283,7 +216,7 @@ def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namesp
         ),
         help=f"Seconds between two polls (env {POLL_INTERVAL_VARIABLE}).",
     )
-    argument_parser.add_argument(
+    subparser.add_argument(
         "--timeout-seconds",
         type=int,
         default=read_integer_setting(
@@ -292,7 +225,7 @@ def parse_arguments(*, command_line_arguments: Sequence[str]) -> argparse.Namesp
         ),
         help=f"Give up after this many seconds (env {TIMEOUT_VARIABLE}).",
     )
-    return argument_parser.parse_args(command_line_arguments)
+    subparser.set_defaults(runner=run)
 
 
 def run_watch(
@@ -339,20 +272,12 @@ def run_watch(
         )
 
 
-def main(*, command_line_arguments: Sequence[str]) -> int:
+def run(*, arguments: argparse.Namespace) -> int:
     """Entry point: block until CI concludes, then report the verdict."""
-    load_environment_file()
-    arguments = parse_arguments(command_line_arguments=command_line_arguments)
     enforce_budget_arguments(arguments=arguments)
     github_token = load_github_token()
     repository_slug = resolve_repository_slug()
-    with httpx.Client(
-        headers={
-            "Authorization": f"Bearer {github_token}",
-            "Accept": "application/vnd.github.v3+json",
-        },
-        timeout=30.0,
-    ) as http_client:
+    with open_github_client(token=github_token) as http_client:
         return run_watch(
             http_client=http_client,
             repository_slug=repository_slug,
@@ -360,7 +285,3 @@ def main(*, command_line_arguments: Sequence[str]) -> int:
             interval_seconds=arguments.interval_seconds,
             timeout_seconds=arguments.timeout_seconds,
         )
-
-
-if __name__ == "__main__":
-    sys.exit(main(command_line_arguments=sys.argv[1:]))
