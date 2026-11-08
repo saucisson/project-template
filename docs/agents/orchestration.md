@@ -7,7 +7,7 @@ ADR-0010.
 ## The day loop
 
 ```text
-morning:  human directive → make day-start → tag daily-YYYY-MM-DD
+morning:  human directive → make day-start → tag daily-YYYY-MM-DD → make sync-daily (if main moved, ADR-0020)
 loop:     pick next issue → develop → make review → make merge-pr into daily
 EOD:      freeze merges → make day-report → make smoke-test → human tests → human merges daily → main
 ```
@@ -18,6 +18,13 @@ The human selects and prioritizes the day's issues. Agents **never edit
 the directive**: priorities change only by human comment. Re-read the
 directive at the start of every session - this is the goal-drift guard:
 every session re-anchors to what the human actually asked for.
+
+If `origin/main` has commits `daily` lacks (template sync, hotfix,
+release), the day session runs `make sync-daily` right after
+`make day-start` and before any work: the driver rebases `daily` onto
+`origin/main` and pushes with `--force-with-lease`; a conflict aborts
+and escalates (`needs-human`) - resolving accepted `main` content
+against accepted `daily` work is a human decision (ADR-0020).
 
 ## 2. Triage gate
 
@@ -166,6 +173,10 @@ and a session that dies at 3 a.m. costs one issue, not the night.
   `make wait-ci PR=N` (ADR-0018), inside the session's time budget -
   "I will continue once CI finishes" is the attended reflex of a
   session nobody will resume.
+- A night session never rewrites `daily`: `make sync-daily` is a
+  day-session action (ADR-0020), and rewriting the branch the loop
+  derives its worklist from mid-flight, with nobody to answer a
+  conflict, is out of the unattended flow entirely.
 - A size-budget BLOCKING is resolved by a split proposal written into
   the pull request body with `make update-pr PR=N BODY_FILE=...`
   (ADR-0019 - the only body-update path; it replaces the whole body,

@@ -22,7 +22,7 @@ Each ADR is one file, `adr-NNNN-short-name.md`, containing:
 - Superseded ADRs are removed from the repository; ADR numbers are
   never reused.
 - **Numbering**: ADR numbers `0001`-`0099` are reserved for the
-  template's own decisions (currently 0001-0016). A project
+  template's own decisions (currently 0001-0020). A project
   instantiated from this template numbers its own, project-specific
   ADRs from `0100` upward, so a template update can add new template
   ADRs without ever colliding with the project's.
@@ -56,3 +56,7 @@ Each ADR is one file, `adr-NNNN-short-name.md`, containing:
 | [0014](adr-0014-tools-directory.md) | A `tools/` directory - the template ships tools, not product code |
 | [0015](adr-0015-agent-runtime-permissions.md) | Agent runtime permissions: the `.vibe/` profile |
 | [0016](adr-0016-apis-rest-best-practices.md) | APIs: REST over HTTP/JSON with best practices |
+| [0017](adr-0017-unattended-loop.md) | Unattended loop: one fresh headless session per issue, claims first |
+| [0018](adr-0018-active-ci-wait.md) | Active CI wait inside the session |
+| [0019](adr-0019-pull-request-body-updates.md) | Pull request body updates go through a driver |
+| [0020](adr-0020-daily-integration-sync.md) | daily integrates main through a sync driver |
