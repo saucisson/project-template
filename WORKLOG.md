@@ -99,3 +99,11 @@ One entry per commit or pull request:
 - **Evidence**: `make check` green (ruff, mypy strict, import-linter, pytest 34 passed, coverage 94.76%). Not run: a live vibe session.
 - **Judgement calls**: ADR-0017 still mentions `--output json` in its decision text - left untouched (constitutional file, human sign-off); the decision itself (process boundary = context reset) is unchanged.
 - **Escalations**: none.
+
+## 2026-11-09 - PR template asks for Closes #n
+
+- **Issue**: none (human request).
+- **Done**: `.github/PULL_REQUEST_TEMPLATE.md` gains an "Issue closure" section (`Closes #n` in the PR body so GitHub auto-closes the issue on merge) and a matching checklist item.
+- **Evidence**: `make check` green (ruff, mypy strict, import-linter, pytest 34 passed, coverage 94.76%).
+- **Judgement calls**: PR template chosen over docs/agents/ - it is where the PR author actually looks.
+- **Escalations**: none.
