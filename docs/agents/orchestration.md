@@ -183,10 +183,17 @@ and a session that dies at 3 a.m. costs one issue, not the night.
   so the session composes the existing body plus the proposal first).
   Raw API writes are denied unattended, and that is the allowlist
   working - the driver is the answer, not a bypass.
-- The loop speaks to a human on stdout: one line per session and one
-  verdict at the end. The verbose trace - full candidate lists,
-  anti-spin decisions, fetch warnings - lands in
-  `.night/night-loop.log` (override: `NIGHT_LOG_FILE`, ADR-0017).
+- The loop speaks to a human on stdout: one line per session (naming
+  the item the session claimed) and one verdict at the end. The
+  verbose trace - full candidate lists, anti-spin decisions, fetch
+  warnings - lands in `.night/night-loop.log` (override:
+  `NIGHT_LOG_FILE`, ADR-0017).
+- The loop is observable while it runs: every session prompt is kept
+  under `.night/sessions/<run>/` (read one to know what the agent was
+  asked to do), the trace logs a `still running` heartbeat every
+  `NIGHT_HEARTBEAT_SECONDS` (default 60, `0` disables it) so a silent
+  session is not a dead session, and each stdout result line names the
+  item the session claimed.
 - The morning audit is unchanged and is the whole point: `WORKLOG.md`,
   the pull requests, every `needs-human` issue, and every
   `night-claimed` issue tell the night's story (§7).
