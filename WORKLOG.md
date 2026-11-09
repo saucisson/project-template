@@ -83,3 +83,11 @@ One entry per commit or pull request:
 - **Evidence**: `make check` green after the fix (ruff, mypy strict 34 files, import-linter, pytest 33 passed, coverage 94.76%).
 - **Judgement calls**: fixes committed as a separate commit on the branch rather than rewriting the human's commits.
 - **Escalations**: none.
+
+## 2026-11-09 - more output during night session (type fix on top)
+
+- **Issue**: none (human request: commit, push, merge).
+- **Done**: commit `857926c` (richer night-session output in scripts/night.py + docs) plus a fix commit restoring `Callable[[argparse.Namespace], int]` in scripts/__main__.py, which the commit had reverted to an explicit Any.
+- **Evidence**: `make check` green after the fix (ruff, mypy strict 34 files, import-linter, pytest 33 passed, coverage 94.76%).
+- **Judgement calls**: fix committed separately, the human's commit untouched.
+- **Escalations**: none.
