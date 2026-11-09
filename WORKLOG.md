@@ -91,3 +91,11 @@ One entry per commit or pull request:
 - **Evidence**: `make check` green after the fix (ruff, mypy strict 34 files, import-linter, pytest 33 passed, coverage 94.76%).
 - **Judgement calls**: fix committed separately, the human's commit untouched.
 - **Escalations**: none.
+
+## 2026-11-09 - night session prints text, not a JSON dump
+
+- **Issue**: none (human relayed the petrichor fix; same one-liner applies here).
+- **Done**: `scripts/night.py` runs headless sessions with `--output text` (new `SESSION_OUTPUT_FORMAT` constant, command built by `build_session_command`); new `scripts/tests/test_night.py` pins the command and asserts `"json" not in command`.
+- **Evidence**: `make check` green (ruff, mypy strict, import-linter, pytest 34 passed, coverage 94.76%). Not run: a live vibe session.
+- **Judgement calls**: ADR-0017 still mentions `--output json` in its decision text - left untouched (constitutional file, human sign-off); the decision itself (process boundary = context reset) is unchanged.
+- **Escalations**: none.

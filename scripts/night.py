@@ -74,6 +74,7 @@ if TYPE_CHECKING:
 
 EXIT_CODE_ALL_ISSUES_PROCESSED = EXIT_CODE_SUCCESS  # a subcommand-local alias, same protocol code
 DEVELOPER_CLI_COMMAND = "vibe"
+SESSION_OUTPUT_FORMAT = "text"
 PROMPT_TEMPLATE_PATH = ".vibe/prompts/night-issue.md"
 AUTO_PROMPT_TEMPLATE_PATH = ".vibe/prompts/night-auto.md"
 ISSUE_PLACEHOLDER = "{{issue}}"
@@ -447,6 +448,26 @@ def build_prompt(*, template: str, placeholder: str, replacement: str) -> str:
     return f"{template}\n\n{replacement}\n"
 
 
+def build_session_command(
+    *,
+    prompt_path: Path,
+    maximum_session_turns: int,
+    session_time_limit_seconds: int,
+) -> list[str]:
+    """Build the headless session command: text output, bounded budget."""
+    return [
+        DEVELOPER_CLI_COMMAND,
+        "--prompt-file",
+        str(prompt_path),
+        "--output",
+        SESSION_OUTPUT_FORMAT,
+        "--max-turns",
+        str(maximum_session_turns),
+        "--time-limit",
+        str(session_time_limit_seconds),
+    ]
+
+
 def run_developer_session(
     *,
     prompt_path: Path,
@@ -458,23 +479,20 @@ def run_developer_session(
 ) -> tuple[int, int]:
     """Run one headless developer session; return (exit code, seconds).
 
+    The session runs with ``--output text``: only the final answer is
+    printed, as readable text - ``--output json`` would dump the whole
+    session as one JSON block on stdout, which the loop never parses.
     The session's stdout is inherited: what the agent prints lands in
     the loop's terminal as it happens. The heartbeat keeps the trace
     alive while the session itself stays silent: every
     ``heartbeat_seconds`` (0 disables it) the loop logs that the
     session is still running and how much of its budget is spent.
     """
-    command = [
-        DEVELOPER_CLI_COMMAND,
-        "--prompt-file",
-        str(prompt_path),
-        "--output",
-        "json",
-        "--max-turns",
-        str(maximum_session_turns),
-        "--time-limit",
-        str(session_time_limit_seconds),
-    ]
+    command = build_session_command(
+        prompt_path=prompt_path,
+        maximum_session_turns=maximum_session_turns,
+        session_time_limit_seconds=session_time_limit_seconds,
+    )
     developer_model = os.environ.get(NIGHT_MODEL_VARIABLE, "").strip()
     if developer_model:
         command.extend(["--model", developer_model])
