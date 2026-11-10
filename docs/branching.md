@@ -23,7 +23,7 @@ Constitutional document (ADR-0009). Changing it requires a human decision.
    `.github/ISSUE_TEMPLATE/task.md`). No criteria → the issue is labeled
    `blocked` and skipped.
 3. **Work** - one issue at a time, branch `feat/<issue>` or `fix/<issue>`
-   from `daily`, small pull requests (target < 500 changed lines), rebase
+   from `daily`, small pull requests (target < 1000 changed lines), rebase
    on `daily` before opening.
 4. **Review and merge into `daily`** - once CI is green on the pushed
    head, the developer agent runs

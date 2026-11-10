@@ -39,7 +39,7 @@ Otherwise: label `blocked`, comment why, move on.
 ## 3. Sequential work
 
 One issue, one branch, one PR, one context at a time. Small pull
-requests (< 500 lines). Rebase on `daily` before opening the PR. Full
+requests (< 1000 lines). Rebase on `daily` before opening the PR. Full
 `make check` before the reviewer sees anything.
 
 The developer session is cleared after every merged pull request

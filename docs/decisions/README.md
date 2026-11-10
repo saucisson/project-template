@@ -18,10 +18,14 @@ Each ADR is one file, `adr-NNNN-short-name.md`, containing:
 ## Rules
 
 - Accepted ADRs are **never edited**. A reversal is a new ADR that
-  references and supersedes the old one. Stale driver path references
-  are the one owner-set exception (ADR-0021): they follow the code so
-  projects instantiated from the template never inherit dead paths;
-  the decisions themselves never change.
+  references and supersedes the old one. Two owner-set exceptions are
+  recorded here: stale driver path references (ADR-0021) follow the
+  code so projects instantiated from the template never inherit dead
+  paths, and the pull request size budget referenced by ADR-0019 was
+  raised from ~500 to ~1000 changed lines by owner instruction
+  (2026-11-09) so the ADR text follows the threshold the review gate
+  actually applies. Apart from these, the decisions themselves never
+  change.
 - Superseded ADRs are removed from the repository; ADR numbers are
   never reused.
 - **Numbering**: ADR numbers `0001`-`0099` are reserved for the
