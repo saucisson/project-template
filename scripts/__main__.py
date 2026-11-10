@@ -23,6 +23,7 @@ if TYPE_CHECKING:
             """Dispatch to the subcommand's ``run()``."""
             ...
 
+
 COMMAND_MODULES = (claims, pulls, merge, ci, review, session, day, night)
 
 
