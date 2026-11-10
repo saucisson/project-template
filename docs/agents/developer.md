@@ -37,7 +37,7 @@ pull requests into `daily`, but only through the merge driver
   script, ADR-0014): tests the gate never collects are theater, and
   the reviewer blocks them.
 
-- Rebase on `daily` before opening the pull request. Keep it under ~500
+- Rebase on `daily` before opening the pull request. Keep it under ~1000
   changed lines; split earlier rather than larger.
 
 ## Reporting
@@ -113,7 +113,7 @@ The review runs locally as an isolated Vibe Code session (ADR-0010):
    never the session.
 3. **Exit 1** (findings): address every BLOCKING and TO-FIX finding,
    push, wait for CI, and re-run `make review PR=N`. A size-budget
-   finding (diff over ~500 lines) is resolved by a split proposal
+   finding (diff over ~1000 lines) is resolved by a split proposal
    written into the pull request body: compose the new body file (the
    existing body plus the proposal) and run
    `make update-pr PR=N BODY_FILE=...` - the only body-update path;

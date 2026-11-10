@@ -44,6 +44,22 @@ One entry per commit or pull request:
 
 <!-- Append new entries directly below this line. -->
 
+## 2026-11-09 - dispatch argument fix actually applied
+
+- **Issue**: none (follow-up on the previous entry).
+- **Done**: `scripts/__main__.py` now calls `runner(arguments=arguments)` (and types the runner `Callable[..., int]`). The previous entry recorded this exact fix, but its hunk was missing from `main`: every `python -m scripts <command>` still crashed with `TypeError: run() takes 0 positional arguments but 1 was given`, because all `run()` entry points are keyword-only.
+- **Evidence**: crash reproduced on the current `main` (tree copy, stub `httpx` on `PYTHONPATH`, `from __future__ import annotations` injected for the sandbox's Python 3.12), then the same invocation reached the night loop body after the fix; py_compile green; ruff check and ruff format green. Not run: mypy strict, the full night simulation again (this is the same edit the 27/27 simulation of the previous entry already exercised), real git and GitHub API.
+- **Judgement calls**: shipped as its own entry rather than editing the previous one (append-only worklog); no ADR touched.
+- **Escalations**: none.
+
+## 2026-11-09 - pull request size budget raised to ~1000 changed lines
+
+- **Issue**: none (human request: the ~500-line limit caused repeated friction).
+- **Done**: the pull request size budget is raised from ~500 to ~1000 changed lines, everywhere it is stated: `AGENTS.md`, `docs/branching.md`, `docs/agents/developer.md` (work rule and review-exit rule), `docs/agents/orchestration.md`, `docs/review-checklist.md`, the night prompts (`night-issue.md`, `night-auto.md`), and ADR-0019's trigger threshold. `docs/decisions/README.md` records the ADR-0019 edit as the second owner-set exception to "accepted ADRs are never edited". The ADR-0021 **module** budget (~500 lines per file) is a different rule and is left untouched.
+- **Evidence**: no code enforces the budget mechanically (grep over `scripts/` and `tools/`: the only size/split logic is CI wait budgets), so the change is documentation and prompts only; every occurrence of the old threshold was listed and replaced (9 occurrences across 8 files), and a final grep confirms no PR-budget `500` remains. Not run: the full `make check` (no Python file changed), a live review against the real GitHub API.
+- **Judgement calls**: editing accepted ADR-0019 follows the 2026-11-08 precedent (owner-set exceptions recorded in `docs/decisions/README.md`) rather than a new superseding ADR - this is a threshold raise of a trigger the ADR references, not a reversal of its decision; `update-pr` split proposals remain the sanctioned resolution above the new budget.
+- **Escalations**: none.
+
 ## 2026-11-09 - night session live trace
 
 - **Issue**: none (human request: the night loop goes silent while a session runs).

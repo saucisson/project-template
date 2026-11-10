@@ -26,7 +26,7 @@ contract exactly:
    resume you. Exit 0, then `make review PR=N`; exit 1 means fix,
    push, wait again.
 7. Address every BLOCKING and TO-FIX finding, push, wait, re-review.
-   A size-budget BLOCKING (diff over ~500 lines) is resolved by a
+   A size-budget BLOCKING (diff over ~1000 lines) is resolved by a
    PR-level split proposal: compose the new body file (the pull
    request's existing body plus the proposal) and write it with
    `make update-pr PR=N BODY_FILE=...` - the only body-update path,

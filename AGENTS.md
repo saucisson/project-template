@@ -23,7 +23,7 @@ If you are unsure which role this session assigns you, stop and ask.
   via the merge driver (`make merge-pr`, ADR-0009). Full model:
   `docs/branching.md`.
 - One issue at a time, one branch per issue (`feat/<issue>` or
-  `fix/<issue>` from `daily`), pull requests under ~500 lines.
+  `fix/<issue>` from `daily`), pull requests under ~1000 lines.
 - One session context per pull request: after each merge, clear the
   session (`/clear` in the Vibe Code CLI, a new session elsewhere).
   The residue of a previous issue rationalizes the next one; the
