@@ -43,9 +43,7 @@ def test_write_worklog_entry_creates_index_card(
     assert entry_path.name.endswith("-pr-91.md")
 
 
-def test_write_worklog_entry_is_idempotent(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_write_worklog_entry_is_idempotent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A second call for the same PR does not overwrite the existing file."""
     monkeypatch.setattr(pulls, "REPOSITORY_ROOT", tmp_path)
     first = pulls.write_worklog_entry(
