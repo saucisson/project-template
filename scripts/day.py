@@ -89,9 +89,7 @@ def changed_files_since(*, tag_name: str) -> int:
 
 def worklog_entries_since(*, tag_name: str) -> list[str]:
     """List the worklog entries changed since the tag (ADR-0022)."""
-    git_output = run_git(
-        arguments=["diff", "--name-only", f"{tag_name}..HEAD", "--", WORKLOG_PATH]
-    )
+    git_output = run_git(arguments=["diff", "--name-only", f"{tag_name}..HEAD", "--", WORKLOG_PATH])
     return [line for line in git_output.splitlines() if line.strip()]
 
 
