@@ -23,13 +23,14 @@ Each ADR is one file, `adr-NNNN-short-name.md`, containing:
   code so projects instantiated from the template never inherit dead
   paths, and the pull request size budget referenced by ADR-0019 was
   raised from ~500 to ~1000 changed lines by owner instruction
-  (2026-11-09) so the ADR text follows the threshold the review gate
-  actually applies. Apart from these, the decisions themselves never
+  (2026-11-09), then lowered back to ~500 changed lines (2026-11-12,
+  worklog v2 session: smaller review bundles cost less context) so
+  the ADR text follows the threshold the review gate actually applies. Apart from these, the decisions themselves never
   change.
 - Superseded ADRs are removed from the repository; ADR numbers are
   never reused.
 - **Numbering**: ADR numbers `0001`-`0099` are reserved for the
-  template's own decisions (currently 0001-0021). A project
+  template's own decisions (currently 0001-0022). A project
   instantiated from this template numbers its own, project-specific
   ADRs from `0100` upward, so a template update can add new template
   ADRs without ever colliding with the project's.
@@ -68,3 +69,4 @@ Each ADR is one file, `adr-NNNN-short-name.md`, containing:
 | [0019](adr-0019-pull-request-body-updates.md) | Pull request body updates go through a driver |
 | [0020](adr-0020-daily-integration-sync.md) | daily integrates main through a sync driver |
 | [0021](adr-0021-scripts-cli-package.md) | Driver commands: one CLI package with subcommands, make stays the agent surface |
+| [0022](adr-0022-worklog-per-record-files.md) | Worklog v2: one driver-generated file per record in `docs/worklog/`, no agent reads it |

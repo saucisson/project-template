@@ -39,14 +39,14 @@ Otherwise: label `blocked`, comment why, move on.
 ## 3. Sequential work
 
 One issue, one branch, one PR, one context at a time. Small pull
-requests (< 1000 lines). Rebase on `daily` before opening the PR. Full
+requests (< 500 lines). Rebase on `daily` before opening the PR. Full
 `make check` before the reviewer sees anything.
 
 The developer session is cleared after every merged pull request
 (`/clear` in the Vibe Code CLI, a new session elsewhere): a context
 that carries the previous issue's residue rationalizes the next one.
 Nothing is lost - the day's memory lives in the repository
-(`WORKLOG.md`, the pull requests, the issues), and the fresh session
+(`docs/worklog/`, the pull requests, the issues), and the fresh session
 re-anchors by re-reading the directive and `AGENTS.md` (§1), the
 goal-drift guard.
 
@@ -108,9 +108,9 @@ severity contract.
 3. `make smoke-test` - proof the pipeline still runs.
 4. Mutation workflow runs on `daily` (`make mutate`); surviving mutants
    become new issues (ADR-0012).
-5. Human tests, audits `WORKLOG.md` (the day's agent-written audit
-   trail - one entry per commit or pull request, none missing), then
-   **merges `daily` into `main` themselves**.
+5. Human tests, audits the day's entries in `docs/worklog/` (listed by
+   `make day-report` - one entry per commit or pull request, none
+   missing), then **merges `daily` into `main` themselves**.
 
 A red `daily` at EOD triggers the incident protocol: revert first
 (`docs/branching.md`), and if the revert does not settle it, `urgent`
@@ -150,8 +150,8 @@ and a session that dies at 3 a.m. costs one issue, not the night.
   `make wait-ci PR=N` plus a local `make check` and a full read of
   the diff and review comments, fixes it, and walks the same
   review-and-merge gate as a fresh issue - the recovery contract is
-  the developer contract, with an honest `WORKLOG.md` entry naming
-  the resumption. A human can also hand a pull request to the night
+  the developer contract, with the resumption named honestly on the
+  pull request. A human can also hand a pull request to the night
   by labeling its backing issue `night-claimed` by hand.
 
 - The loop applies the triage gate (§2) before each session: issues
@@ -194,6 +194,7 @@ and a session that dies at 3 a.m. costs one issue, not the night.
   `NIGHT_HEARTBEAT_SECONDS` (default 60, `0` disables it) so a silent
   session is not a dead session, and each stdout result line names the
   item the session claimed.
-- The morning audit is unchanged and is the whole point: `WORKLOG.md`,
-  the pull requests, every `needs-human` issue, and every
-  `night-claimed` issue tell the night's story (§7).
+- The morning audit is unchanged and is the whole point: the day's
+  `docs/worklog/` entries (via `make day-report`), the pull requests,
+  every `needs-human` issue, and every `night-claimed` issue tell the
+  night's story (§7).

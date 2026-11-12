@@ -1,11 +1,13 @@
-"""Pull request drivers: open one, update one body (ADR-0017, ADR-0019).
+"""Pull request drivers: open one, update one body (ADR-0017, ADR-0019, ADR-0022).
 
 ``pr`` opens each pull request into ``daily`` through the GitHub API
 and nothing else - never by hand, never through ``gh``: the driver
 shares the token and the protocol of the review and merge drivers, so
 the flow works attended and unattended alike (the runtime profile gates
 ``gh`` out, ADR-0015, and an unattended session cannot answer an
-approval).
+approval). After opening, it writes the worklog index card
+(``docs/worklog/<date>-pr-<N>.md``, ADR-0022), commits it on the branch
+as ``worklog: PR #N``, and pushes.
 
 ``update-pr`` replaces the whole body of an OPEN pull request from a
 file (ADR-0019): the review checklist resolves an over-budget pull
@@ -15,9 +17,14 @@ caller composes the new body (the existing body plus the change) into
 the file first.
 """
 
+import json
+import re
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import httpx
 
 from scripts._github import open_github_client
 from scripts._shared import (
@@ -29,12 +36,11 @@ from scripts._shared import (
     load_github_token,
     resolve_repository_slug,
     run_git,
+    try_git,
 )
 
 if TYPE_CHECKING:
     import argparse
-
-    import httpx
 
 PULL_REQUEST_TEMPLATE_PATH = ".github/PULL_REQUEST_TEMPLATE.md"
 DEFAULT_BASE_BRANCH = "daily"
@@ -42,6 +48,9 @@ DETACHED_HEAD_NAME = "HEAD"
 UNPROCESSABLE_ENTITY_STATUS_CODE = 422
 EXIT_CODE_OPENED = EXIT_CODE_SUCCESS  # a subcommand-local alias, same protocol code
 EXIT_CODE_UPDATED = EXIT_CODE_SUCCESS  # a subcommand-local alias, same protocol code
+WORKLOG_DIR = Path("docs/worklog")
+ISSUE_REFERENCE_PATTERN = re.compile(r"#(\d+)")
+CLOSES_ISSUE_PATTERN = re.compile(r"(?:closes|fixes|resolves)\s+#(\d+)", re.IGNORECASE)
 
 
 def current_branch() -> str:
@@ -84,12 +93,23 @@ def open_pull_request(
     body: str,
 ) -> dict[str, object]:
     """Open the pull request; a 422 means the state, not the API, is wrong."""
-    response = http_client.post(
-        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/pulls",
-        json={"title": title, "head": head_branch, "base": base_branch, "body": body},
-    )
+    try:
+        response = http_client.post(
+            f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/pulls",
+            json={"title": title, "head": head_branch, "base": base_branch, "body": body},
+        )
+    except httpx.TransportError as transport_error:
+        print(
+            f"Error: network failure while opening the pull request: {transport_error}",
+            file=sys.stderr,
+        )
+        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE) from transport_error
     if response.is_success:
-        pull_request: object = response.json()
+        try:
+            pull_request: object = response.json()
+        except json.JSONDecodeError as decode_error:
+            print(f"Error: undecodable API response: {decode_error}", file=sys.stderr)
+            raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE) from decode_error
         if not isinstance(pull_request, dict):
             raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
         return pull_request
@@ -137,6 +157,69 @@ def register_pr(subparsers: argparse._SubParsersAction[argparse.ArgumentParser])
     subparser.set_defaults(runner=run_pr)
 
 
+def extract_issue_number(*, body: str) -> str | None:
+    """Extract the issue closed by the pull request body.
+
+    Prefers a ``Closes #N`` / ``Fixes #N`` / ``Resolves #N`` anchor;
+    falls back to the first ``#N`` reference.
+    """
+    closes_match = CLOSES_ISSUE_PATTERN.search(body)
+    if closes_match:
+        return closes_match.group(1)
+    fallback = ISSUE_REFERENCE_PATTERN.search(body)
+    return fallback.group(1) if fallback else None
+
+
+def write_worklog_entry(
+    *,
+    pull_request_number: int,
+    title: str,
+    head_branch: str,
+    body: str,
+    repository_slug: str,
+) -> Path:
+    """Write the worklog index card for the pull request (ADR-0022).
+
+    Returns the path of the written file. Idempotent: an existing file
+    for the same PR is not overwritten.
+    """
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    worklog_dir = REPOSITORY_ROOT / WORKLOG_DIR
+    worklog_dir.mkdir(parents=True, exist_ok=True)
+    entry_path = worklog_dir / f"{today}-pr-{pull_request_number}.md"
+    if entry_path.exists():
+        return entry_path
+    issue_number = extract_issue_number(body=body)
+    issue_line = f"- Issue: #{issue_number}" if issue_number else "- Issue: none"
+    pull_request_url = f"https://github.com/{repository_slug}/pull/{pull_request_number}"
+    content = (
+        f"# PR #{pull_request_number}: {title}\n\n"
+        f"- Date: {today}\n"
+        f"- Branch: {head_branch}\n"
+        f"{issue_line}\n"
+        f"- Report: {pull_request_url}\n"
+    )
+    entry_path.write_text(content, encoding="utf-8")
+    return entry_path
+
+
+def commit_and_push_worklog_entry(*, entry_path: Path, pull_request_number: int) -> bool:
+    """Commit the worklog entry on the current branch and push (ADR-0022).
+
+    Returns True when a commit was created and pushed, False when the
+    entry was already committed (idempotent re-run). A real commit error
+    (failing hook, missing identity) is not swallowed: it propagates as
+    a protocol failure.
+    """
+    run_git(arguments=["add", str(entry_path)])
+    staged = try_git(arguments=["diff", "--cached", "--quiet"])
+    if staged.returncode != 0:
+        run_git(arguments=["commit", "-m", f"worklog: PR #{pull_request_number}"])
+        run_git(arguments=["push"])
+        return True
+    return False
+
+
 def run_pr(*, arguments: argparse.Namespace) -> int:
     """Entry point: title in, opened pull request out."""
     github_token = load_github_token()
@@ -158,6 +241,22 @@ def run_pr(*, arguments: argparse.Namespace) -> int:
         f"Pull request #{pull_request_number} opened:"
         f" {head_branch} -> {arguments.base} ({pull_request_url})"
     )
+    if not isinstance(pull_request_number, int):
+        print("Error: no pull request number in the API response.", file=sys.stderr)
+        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
+    entry_path = write_worklog_entry(
+        pull_request_number=pull_request_number,
+        title=arguments.title,
+        head_branch=head_branch,
+        body=body,
+        repository_slug=repository_slug,
+    )
+    committed = commit_and_push_worklog_entry(
+        entry_path=entry_path, pull_request_number=pull_request_number
+    )
+    print(f"Worklog entry written: {entry_path.relative_to(REPOSITORY_ROOT)}")
+    if not committed:
+        print("Worklog entry already committed (idempotent re-run).")
     return EXIT_CODE_OPENED
 
 
@@ -189,9 +288,17 @@ def fetch_issue(
     item_number: int,
 ) -> dict[str, object]:
     """Fetch the item, or fail closed: no item, no update."""
-    response = http_client.get(
-        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/issues/{item_number}"
-    )
+    try:
+        response = http_client.get(
+            f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/issues/{item_number}"
+        )
+    except httpx.TransportError as transport_error:
+        print(
+            f"Error: network failure while fetching #{item_number}: {transport_error}"
+            " - the body is unchanged.",
+            file=sys.stderr,
+        )
+        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE) from transport_error
     if not response.is_success:
         print(
             f"Error: could not fetch #{item_number}"
@@ -199,7 +306,11 @@ def fetch_issue(
             file=sys.stderr,
         )
         raise SystemExit(EXIT_CODE_CRITERIA_UNMET)
-    issue: object = response.json()
+    try:
+        issue: object = response.json()
+    except json.JSONDecodeError as decode_error:
+        print(f"Error: undecodable API response: {decode_error}", file=sys.stderr)
+        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE) from decode_error
     if not isinstance(issue, dict):
         print("Error: the item payload is unexpected - do not update it.", file=sys.stderr)
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
@@ -230,10 +341,18 @@ def write_body(
     new_body: str,
 ) -> None:
     """Replace the pull request body; a failure means no update."""
-    response = http_client.patch(
-        f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/pulls/{pull_request_number}",
-        json={"body": new_body},
-    )
+    try:
+        response = http_client.patch(
+            f"{GITHUB_API_BASE_URL}/repos/{repository_slug}/pulls/{pull_request_number}",
+            json={"body": new_body},
+        )
+    except httpx.TransportError as transport_error:
+        print(
+            f"Error: network failure while updating pull request"
+            f" #{pull_request_number}: {transport_error} - the body is unchanged.",
+            file=sys.stderr,
+        )
+        raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE) from transport_error
     if not response.is_success:
         print(
             f"Error: could not update pull request #{pull_request_number}"
