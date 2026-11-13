@@ -1,9 +1,9 @@
-"""Shared GitHub API helpers for the drivers that call it (ADR-0021).
+"""Shared GitHub API helpers for the drivers that call it (ADR-0001).
 
 The drivers that talk to the GitHub API share the same fail-closed
 fetch primitives here. The modules that never touch the API
 (``day-report``, ``sync-daily``, ``review-bundle``) do not import this
-module, so they stay stdlib-only (ADR-0021).
+module, so they stay stdlib-only (ADR-0001).
 """
 
 import sys

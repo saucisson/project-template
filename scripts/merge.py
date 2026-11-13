@@ -1,4 +1,4 @@
-"""Merge driver: merge one reviewed pull request into daily (ADR-0009).
+"""Merge driver: merge one reviewed pull request into daily (ADR-0005).
 
 The developer agent merges each completed pull request into ``daily``
 - through this driver and nothing else. The driver IS the codified
@@ -9,7 +9,7 @@ and mergeable, and every check run on its head has concluded
 "success". Then it merges through the GitHub API with the linear
 method the repository allows - squash preferred, a rebase merge as
 the fallback when squash is disabled; a merge commit is never issued
-(linear history on ``daily``, ADR-0009) - and deletes the branch.
+(linear history on ``daily``, ADR-0005) - and deletes the branch.
 
 The reviewer session never merges: it writes the report; this driver
 reads it. ``main`` is never merged here - that stays a human action.
@@ -140,7 +140,7 @@ def resolve_merge_method(
     http_client: httpx.Client,
     repository_slug: str,
 ) -> str:
-    """Return the linear merge method the repository allows (ADR-0009).
+    """Return the linear merge method the repository allows (ADR-0005).
 
     Squash is preferred (one commit per pull request, the whole review
     trace in one place); a rebase merge is the accepted fallback when
@@ -175,13 +175,13 @@ def resolve_merge_method(
     raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
 
 
-def evaluate_merge_criteria(  # noqa: PLR0911 - one return per codified criterion (ADR-0009)
+def evaluate_merge_criteria(  # noqa: PLR0911 - one return per codified criterion (ADR-0005)
     *,
     report: dict[str, object],
     pull_request: dict[str, object],
     check_runs: Sequence[dict[str, object]],
 ) -> tuple[bool, str]:
-    """Apply the codified merge criteria (ADR-0009); return (ok, reason)."""
+    """Apply the codified merge criteria (ADR-0005); return (ok, reason)."""
     blocking_count = report.get("blocking_count")
     if blocking_count is None:
         return False, "the review report has no blocking_count - rerun the review"
@@ -255,8 +255,8 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
     """Register the merge-pr subcommand."""
     subparser = subparsers.add_parser(
         "merge-pr",
-        help="Merge one reviewed pull request into daily (ADR-0009).",
-        description="Merge one reviewed pull request into daily (ADR-0009).",
+        help="Merge one reviewed pull request into daily (ADR-0005).",
+        description="Merge one reviewed pull request into daily (ADR-0005).",
     )
     subparser.add_argument(
         "--pr-number",

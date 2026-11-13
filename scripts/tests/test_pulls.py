@@ -1,4 +1,4 @@
-"""Tests for the pull request driver scripts/pulls.py (ADR-0017, ADR-0019, ADR-0022)."""
+"""Tests for the pull request driver scripts/pulls.py (ADR-0007, ADR-0005)."""
 
 import argparse
 import subprocess

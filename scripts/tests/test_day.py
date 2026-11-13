@@ -1,4 +1,4 @@
-"""Tests for the day-cycle drivers scripts/day.py (ADR-0020, ADR-0022)."""
+"""Tests for the day-cycle drivers scripts/day.py (ADR-0005)."""
 
 from typing import TYPE_CHECKING
 

@@ -1,16 +1,16 @@
-"""Pull request drivers: open one, update one body (ADR-0017, ADR-0019, ADR-0022).
+"""Pull request drivers: open one, update one body (ADR-0007, ADR-0005).
 
 ``pr`` opens each pull request into ``daily`` through the GitHub API
 and nothing else - never by hand, never through ``gh``: the driver
 shares the token and the protocol of the review and merge drivers, so
 the flow works attended and unattended alike (the runtime profile gates
-``gh`` out, ADR-0015, and an unattended session cannot answer an
+``gh`` out, ADR-0006, and an unattended session cannot answer an
 approval). After opening, it writes the worklog index card
-(``docs/worklog/<date>-pr-<N>.md``, ADR-0022), commits it on the branch
+(``docs/worklog/<date>-pr-<N>.md``, ADR-0005), commits it on the branch
 as ``worklog: PR #N``, and pushes.
 
 ``update-pr`` replaces the whole body of an OPEN pull request from a
-file (ADR-0019): the review checklist resolves an over-budget pull
+file (ADR-0005): the review checklist resolves an over-budget pull
 request with a split proposal written into the body, and this is the
 one sanctioned write path for it. It REPLACES, it never appends: the
 caller composes the new body (the existing body plus the change) into
@@ -131,8 +131,8 @@ def register_pr(subparsers: argparse._SubParsersAction[argparse.ArgumentParser])
     """Register the pr subcommand."""
     subparser = subparsers.add_parser(
         "pr",
-        help="Open one pull request into daily (ADR-0017).",
-        description="Open one pull request into daily (ADR-0017).",
+        help="Open one pull request into daily (ADR-0007).",
+        description="Open one pull request into daily (ADR-0007).",
     )
     subparser.add_argument(
         "--title",
@@ -152,7 +152,7 @@ def register_pr(subparsers: argparse._SubParsersAction[argparse.ArgumentParser])
     subparser.add_argument(
         "--base",
         default=DEFAULT_BASE_BRANCH,
-        help="Branch to merge into (daily, ADR-0009).",
+        help="Branch to merge into (daily, ADR-0005).",
     )
     subparser.set_defaults(runner=run_pr)
 
@@ -178,7 +178,7 @@ def write_worklog_entry(
     body: str,
     repository_slug: str,
 ) -> Path:
-    """Write the worklog index card for the pull request (ADR-0022).
+    """Write the worklog index card for the pull request (ADR-0005).
 
     Returns the path of the written file. Idempotent: an existing file
     for the same PR is not overwritten.
@@ -204,7 +204,7 @@ def write_worklog_entry(
 
 
 def commit_and_push_worklog_entry(*, entry_path: Path, pull_request_number: int) -> bool:
-    """Commit the worklog entry on the current branch and push (ADR-0022).
+    """Commit the worklog entry on the current branch and push (ADR-0005).
 
     Returns True when a commit was created and pushed, False when the
     entry was already committed (idempotent re-run). A real commit error
@@ -366,8 +366,8 @@ def register_update_pr(subparsers: argparse._SubParsersAction[argparse.ArgumentP
     """Register the update-pr subcommand."""
     subparser = subparsers.add_parser(
         "update-pr",
-        help="Replace a pull request body from a file (ADR-0019).",
-        description="Replace a pull request body from a file (ADR-0019).",
+        help="Replace a pull request body from a file (ADR-0005).",
+        description="Replace a pull request body from a file (ADR-0005).",
     )
     subparser.add_argument(
         "--pr-number",
@@ -410,6 +410,6 @@ def run_update_pr(*, arguments: argparse.Namespace) -> int:
     print(
         f"Pull request #{arguments.pr_number} body updated from"
         f" {arguments.body_file}: the WHOLE body now comes from that file"
-        " (ADR-0019 - the driver replaces, it never appends)."
+        " (ADR-0005 - the driver replaces, it never appends)."
     )
     return EXIT_CODE_UPDATED

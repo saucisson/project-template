@@ -5,15 +5,15 @@ branch, measured from the morning tag. Stdlib only, on purpose: the
 report must run in the bareest possible environment, because it is
 executed exactly when the working day is being closed.
 
-``sync-daily`` reconciles ``daily`` with ``origin/main`` (ADR-0020).
-The merge flow is one-directional (ADR-0009): work lands in ``daily``
+``sync-daily`` reconciles ``daily`` with ``origin/main`` (ADR-0005).
+The merge flow is one-directional (ADR-0005): work lands in ``daily``
 through reviewed pull requests, and the human merges ``daily`` into
 ``main`` at the end of the day. But ``main`` can also move WITHOUT
 passing through ``daily``: a template sync the human commits on
 ``main``, a hotfix, a release. The branches then diverge, and merging
 ``main`` into ``daily`` would write a merge commit (linear history
 forbids it), while a raw rebase rewrites a protected branch. The sync
-driver is the one sanctioned path (ADR-0020):
+driver is the one sanctioned path (ADR-0005):
 
 - run it from a clean ``daily`` checkout, early in the day (right
   after ``make day-start``, before opening pull requests);
@@ -28,7 +28,7 @@ driver is the one sanctioned path (ADR-0020):
   accepted ``main`` content against accepted ``daily`` work is a
   human decision, never an unattended merge;
 - ``main`` is never rewritten, and unattended (night) sessions never
-  run this driver (ADR-0020).
+  run this driver (ADR-0005).
 
 Exit codes: 0 synced (or nothing to do), 1 refused (wrong branch,
 dirty tree, conflict - nothing was written), 2 protocol failure
@@ -88,7 +88,7 @@ def changed_files_since(*, tag_name: str) -> int:
 
 
 def worklog_entries_since(*, tag_name: str) -> list[str]:
-    """List the worklog entries changed since the tag (ADR-0022)."""
+    """List the worklog entries changed since the tag (ADR-0005)."""
     git_output = run_git(arguments=["diff", "--name-only", f"{tag_name}..HEAD", "--", WORKLOG_PATH])
     return [line for line in git_output.splitlines() if line.strip()]
 
@@ -225,14 +225,14 @@ def precondition_exit_code(*, branch: str) -> int | None:
         print(
             f"Error: sync-daily runs from the {DAILY_BRANCH_NAME} checkout,"
             f" not from {branch or 'a detached head'} - it rewrites"
-            f" {DAILY_BRANCH_NAME} only (ADR-0020).",
+            f" {DAILY_BRANCH_NAME} only (ADR-0005).",
             file=sys.stderr,
         )
         return EXIT_CODE_REFUSED
     if not working_tree_is_clean():
         print(
             "Error: the working tree is not clean - commit or stash first:"
-            " a rebase over a dirty tree is not honest glue (ADR-0020).",
+            " a rebase over a dirty tree is not honest glue (ADR-0005).",
             file=sys.stderr,
         )
         return EXIT_CODE_REFUSED
@@ -287,7 +287,7 @@ def fast_forward_daily(*, previous_head: str) -> int:
         print(
             f"{DAILY_BRANCH_NAME} was strictly behind: fast-forwarded onto"
             f" {MAIN_REMOTE_REFERENCE} and pushed - no commit was"
-            " rewritten (ADR-0020)."
+            " rewritten (ADR-0005)."
         )
     return push_exit_code
 
@@ -301,7 +301,7 @@ def rebase_daily_onto_main(*, previous_head: str, daily_only_before: int) -> int
             "Error: rebasing daily onto origin/main hit a conflict - the"
             " rebase is aborted and daily is untouched. Resolving accepted"
             " main content against accepted daily work is a human decision:"
-            " escalate it (needs-human), never merge it by hand (ADR-0020).",
+            " escalate it (needs-human), never merge it by hand (ADR-0005).",
             file=sys.stderr,
         )
         return EXIT_CODE_REFUSED
@@ -328,7 +328,7 @@ def rebase_daily_onto_main(*, previous_head: str, daily_only_before: int) -> int
         print(
             f"{DAILY_BRANCH_NAME} rebased onto {MAIN_REMOTE_REFERENCE}:"
             f" {daily_only_before} commit(s) replayed, pushed with"
-            " --force-with-lease - main was not touched (ADR-0020)."
+            " --force-with-lease - main was not touched (ADR-0005)."
             " Local branches based on the old daily need a rebase before"
             " their pull request."
         )
@@ -339,8 +339,8 @@ def register_sync_daily(subparsers: argparse._SubParsersAction[argparse.Argument
     """Register the sync-daily subcommand."""
     subparser = subparsers.add_parser(
         "sync-daily",
-        help="Rebase daily onto origin/main, early in the day (ADR-0020).",
-        description="Rebase daily onto origin/main, early in the day (ADR-0020).",
+        help="Rebase daily onto origin/main, early in the day (ADR-0005).",
+        description="Rebase daily onto origin/main, early in the day (ADR-0005).",
     )
     subparser.set_defaults(runner=run_sync_daily)
 

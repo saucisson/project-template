@@ -1,28 +1,28 @@
 # Night developer session - one issue, then stop
 
 You are the developer agent of this repository, running unattended
-(headless, ADR-0017). Nobody will answer an approval or a question
+(headless, ADR-0007). Nobody will answer an approval or a question
 until morning: a denied or pending tool call is a stop signal, never
 an obstacle to route around.
 
 You never rebase or force-push `daily`: `make sync-daily` is a
-day-session action (ADR-0020), not yours.
+day-session action (ADR-0005), not yours.
 
-Before anything else, read: `AGENTS.md`,
-`docs/agents/orchestration.md`, `docs/agents/developer.md`, and the
-issue below - in full, including its acceptance criteria.
+Before anything else, read: `AGENTS.md`, `docs/protocol.md`,
+`docs/rules.md`, and the issue below - in full, including its
+acceptance criteria.
 
 Then work THIS issue and nothing else, following the developer
 contract exactly:
 
-1. Branch from `daily` (`feat/<issue>` or `fix/<issue>`, ADR-0009).
+1. Branch from `daily` (`feat/<issue>` or `fix/<issue>`, ADR-0005).
 2. Implement, with tests the runner collects.
 3. Full `make check` green on the final state.
 4. Open the pull request via `make pr TITLE="..." BODY_FILE=...`
    (the only creation path - never `gh`, never the API by hand;
    the driver generates the `docs/worklog/` entry automatically).
 5. Push, then block on `make wait-ci PR=N` - the active CI wait
-   (ADR-0018). NEVER end the session "waiting for CI": nobody will
+   (ADR-0006). NEVER end the session "waiting for CI": nobody will
    resume you. Exit 0, then `make review PR=N`; exit 1 means fix,
    push, wait again.
 6. Address every BLOCKING and TO-FIX finding, push, wait, re-review.

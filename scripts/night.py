@@ -1,4 +1,4 @@
-"""Unattended day loop: one issue, one fresh headless session (ADR-0017).
+"""Unattended day loop: one issue, one fresh headless session (ADR-0007).
 
 Runs the protocol's day loop overnight. The directive comes in two
 flavors:
@@ -10,7 +10,7 @@ flavors:
   the worklist from the repository itself (open issues, triage gate,
   minus the ``night-claimed`` label), and each session **picks one
   item and claims it first** (``make claim`` or ``make claim-pr``,
-  ADR-0017). The claim is the concurrency guard: two sessions never
+  ADR-0007). The claim is the concurrency guard: two sessions never
   work the same item, and a failed attempt stays claimed for the
   morning audit.
 
@@ -23,7 +23,7 @@ spent, or when a session claims nothing - the night never spins on
 one stuck item.
 
 Nobody answers approvals while this runs: sessions get the project's
-runtime profile (``.vibe/``, ADR-0015), allowlisted commands run, and
+runtime profile (``.vibe/``, ADR-0006), allowlisted commands run, and
 a denied call is a stop signal the session escalates honestly - never
 an obstacle to route around.
 
@@ -33,7 +33,7 @@ versioned prompt, runs the session, records the exit code, and moves
 on. The verdicts live in the repository (``docs/worklog/``, the pull
 requests, the issues) for the morning audit.
 
-Output has two channels (ADR-0017): stdout is the short, readable
+Output has two channels (ADR-0007): stdout is the short, readable
 summary - one line per session (naming the item the session claimed)
 and one verdict at the end - while the verbose trace (full candidate
 lists, anti-spin decisions, fetch warnings, a heartbeat per running
@@ -290,7 +290,7 @@ def fetch_candidate_pull_requests(
     candidate_limit: int,
     milestone_numbers: set[int],
 ) -> list[tuple[int, dict[str, object]]]:
-    """Derive the recoverable pull requests (ADR-0017 recovery path).
+    """Derive the recoverable pull requests (ADR-0007 recovery path).
 
     A pull request is recoverable when all of these hold: it is open,
     it targets ``daily``, its head branch is ``feat/N`` or ``fix/N``,
@@ -430,7 +430,7 @@ def describe_claimed_items(
 
 
 def load_prompt_template(*, template_path: str) -> str:
-    """Load a versioned night-session prompt (ADR-0017); missing fails closed."""
+    """Load a versioned night-session prompt (ADR-0007); missing fails closed."""
     resolved_path = REPOSITORY_ROOT / template_path
     if not resolved_path.is_file():
         print(
@@ -541,7 +541,7 @@ def write_log_entry(*, log_file: Path, text: str) -> None:
 
 @dataclasses.dataclass
 class NightJournal:
-    """The loop's two output channels (ADR-0017).
+    """The loop's two output channels (ADR-0007).
 
     ``record`` pairs one short stdout line for the morning audit with
     its verbose log counterpart; ``log`` writes to the trace only.
@@ -564,8 +564,8 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
     """Register the night subcommand."""
     subparser = subparsers.add_parser(
         "night",
-        help="Run the unattended day loop, one session per issue (ADR-0017).",
-        description="Run the unattended day loop, one session per issue (ADR-0017).",
+        help="Run the unattended day loop, one session per issue (ADR-0007).",
+        description="Run the unattended day loop, one session per issue (ADR-0007).",
     )
     subparser.add_argument(
         "--issues",
@@ -848,7 +848,7 @@ def run(*, arguments: argparse.Namespace) -> int:
     if shutil.which(DEVELOPER_CLI_COMMAND) is None:
         print(
             f"Error: {DEVELOPER_CLI_COMMAND} is not on PATH - the unattended"
-            " loop needs a signed-in Vibe Code CLI (ADR-0017).",
+            " loop needs a signed-in Vibe Code CLI (ADR-0007).",
             file=sys.stderr,
         )
         return EXIT_CODE_PROTOCOL_FAILURE
