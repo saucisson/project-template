@@ -1,7 +1,7 @@
-"""Command-line entry point: ``python -m scripts <command>`` (ADR-0021).
+"""Command-line entry point: ``python -m scripts <command>`` (ADR-0001).
 
 Make stays THE agent surface: every subcommand below matches a make
-target one-to-one (ADR-0021). This dispatcher only wires the
+target one-to-one (ADR-0001). This dispatcher only wires the
 subcommands to their domain modules; it owns no protocol of its own.
 """
 
@@ -31,7 +31,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     """Build the CLI: one subparser per driver subcommand."""
     argument_parser = argparse.ArgumentParser(
         prog="scripts",
-        description="Project drivers: one subcommand per make target (ADR-0021).",
+        description="Project drivers: one subcommand per make target (ADR-0001).",
     )
     subparsers = argument_parser.add_subparsers(dest="command", required=True)
     for module in COMMAND_MODULES:

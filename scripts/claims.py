@@ -1,4 +1,4 @@
-"""Claim driver: mark one issue or pull request taken (ADR-0017).
+"""Claim driver: mark one issue or pull request taken (ADR-0007).
 
 In the auto-discovered night loop (``make night`` without ISSUES) each
 session picks its own item, so its FIRST act is to claim it:
@@ -13,7 +13,7 @@ The claim is both the concurrency guard and the honesty record:
 - a failed attempt stays claimed: the morning audit sees what was
   tried, and the human - never an agent - decides the retry.
 
-Pull-request claims cover the recovery path (ADR-0017): a session may
+Pull-request claims cover the recovery path (ADR-0007): a session may
 be handed - or pick - a pull request left open by an earlier failed
 session (red CI, unaddressed findings). The same rule applies: no
 claim, no work.
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     import httpx
 
 CLAIM_LABEL_COLOR = "d4c5f9"
-CLAIM_LABEL_DESCRIPTION = "Claimed by an unattended night session (ADR-0017)"
+CLAIM_LABEL_DESCRIPTION = "Claimed by an unattended night session (ADR-0007)"
 EXIT_CODE_CLAIMED = EXIT_CODE_SUCCESS  # a subcommand-local alias, same protocol code
 
 
@@ -149,8 +149,8 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
     """Register the claim subcommand: exactly one item, issue or pull request."""
     subparser = subparsers.add_parser(
         "claim",
-        help="Claim one issue or pull request for an unattended session (ADR-0017).",
-        description="Claim one issue or pull request for an unattended session (ADR-0017).",
+        help="Claim one issue or pull request for an unattended session (ADR-0007).",
+        description="Claim one issue or pull request for an unattended session (ADR-0007).",
     )
     item_group = subparser.add_mutually_exclusive_group(required=True)
     item_group.add_argument(
@@ -161,7 +161,7 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
     item_group.add_argument(
         "--pr",
         type=int,
-        help="Pull request number to claim (recovery path, ADR-0017).",
+        help="Pull request number to claim (recovery path, ADR-0007).",
     )
     subparser.set_defaults(runner=run)
 

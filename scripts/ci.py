@@ -1,4 +1,4 @@
-"""Active CI wait: block until CI concludes on the pull request head (ADR-0018).
+"""Active CI wait: block until CI concludes on the pull request head (ADR-0006).
 
 A session that ends with "the review will happen once CI finishes" is
 attended thinking: a headless session never resumes, and nobody types
@@ -198,8 +198,8 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
     """Register the wait-ci subcommand."""
     subparser = subparsers.add_parser(
         "wait-ci",
-        help="Block until CI concludes on the pull request head (ADR-0018).",
-        description="Block until CI concludes on the pull request head (ADR-0018).",
+        help="Block until CI concludes on the pull request head (ADR-0006).",
+        description="Block until CI concludes on the pull request head (ADR-0006).",
     )
     subparser.add_argument(
         "--pr-number",

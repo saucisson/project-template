@@ -1,4 +1,4 @@
-# Local gates (ADR-0007, ADR-0008): a secret or a style violation stops
+# Local gates (ADR-0004): a secret or a style violation stops
 # at commit time, before CI ever sees it.
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit

@@ -1,6 +1,6 @@
 # Project template - task runner. `make help` lists every target.
 # The day cycle targets (day-start, day-report, smoke-test) implement
-# docs/branching.md; the quality targets implement ADR-0007/0008.
+# docs/protocol.md; the quality targets implement ADR-0004.
 
 UV := uv
 PYTHON := $(UV) run python
@@ -20,30 +20,30 @@ install: ## Install the environment and the pre-commit hooks.
 	$(UV) sync --locked
 	$(UV) run pre-commit install
 
-lint: ## Lint every file (Ruff, ADR-0004/0008).
+lint: ## Lint every file (Ruff, ADR-0002/0004).
 	$(UV) run ruff check .
 
 format: ## Format every file in place (Ruff).
 	$(UV) run ruff format .
 
-typecheck: ## Run the reference type checker (mypy strict, ADR-0006).
+typecheck: ## Run the reference type checker (mypy strict, ADR-0003).
 	$(UV) run mypy tools/notify/src tools/notify/tests scripts
 
 imports: ## Verify the onion layer contract (import-linter, ADR-0002).
 	$(UV) run lint-imports
 
-test: ## Run the full test suite with the coverage floor (ADR-0007).
+test: ## Run the full test suite with the coverage floor (ADR-0004).
 	$(UV) run pytest
 
 check: lint typecheck imports test ## Full quality gate: run before reporting work.
 
-security: ## Secret scan of the whole history (gitleaks, ADR-0008).
+security: ## Secret scan of the whole history (gitleaks, ADR-0004).
 	gitleaks git --no-banner --redact .
 
 build: ## Build the wheel and the sdist (ADR-0001).
 	$(UV) build
 
-day-start: ## Tag the morning restore point on `daily` (docs/branching.md).
+day-start: ## Tag the morning restore point on `daily` (docs/protocol.md).
 	git tag "$(DAY_TAG)"
 
 day-report: ## Print the end-of-day report since the morning tag.
@@ -52,7 +52,7 @@ day-report: ## Print the end-of-day report since the morning tag.
 smoke-test: ## Verify the notification pipeline via console delivery.
 	$(CONSOLE_SCRIPT) smoke
 
-mutate: ## Run mutation testing (ADR-0012; EOD on daily).
+mutate: ## Run mutation testing (ADR-0004; EOD on daily).
 	$(UV) run mutmut run
 
 notify: ## Notify the owner: make notify severity=... message=... [issue-identifier=...]
@@ -61,34 +61,34 @@ notify: ## Notify the owner: make notify severity=... message=... [issue-identif
 		--message "$(message)" \
 		--issue-identifier "$(issue_identifier)"
 
-review: ## Run the local reviewer session on pull request PR=N (ADR-0010).
+review: ## Run the local reviewer session on pull request PR=N (ADR-0006).
 	$(PYTHON) -m scripts review --pr-number $(PR)
 
-merge-pr: ## Merge pull request PR=N into daily after review and CI (ADR-0009).
+merge-pr: ## Merge pull request PR=N into daily after review and CI (ADR-0005).
 	$(PYTHON) -m scripts merge-pr --pr-number $(PR)
 
-pr: ## Open the pull request from the current branch: TITLE=... [BODY_FILE=...] (ADR-0017).
+pr: ## Open the pull request from the current branch: TITLE=... [BODY_FILE=...] (ADR-0007).
 	$(PYTHON) -m scripts pr --title "$(TITLE)" --body-file "$(BODY_FILE)"
 
-claim: ## Claim an issue before working it (auto-discovered night sessions): ISSUE=N (ADR-0017).
+claim: ## Claim an issue before working it (auto-discovered night sessions): ISSUE=N (ADR-0007).
 	$(PYTHON) -m scripts claim --issue "$(ISSUE)"
 
-claim-pr: ## Claim a pull request before resuming it (night recovery): PR=N (ADR-0017).
+claim-pr: ## Claim a pull request before resuming it (night recovery): PR=N (ADR-0007).
 	$(PYTHON) -m scripts claim --pr "$(PR)"
 
-update-pr: ## Replace a pull request body from a file: PR=N BODY_FILE=... (ADR-0019).
+update-pr: ## Replace a pull request body from a file: PR=N BODY_FILE=... (ADR-0005).
 	$(PYTHON) -m scripts update-pr --pr-number "$(PR)" --body-file "$(BODY_FILE)"
 
-sync-daily: ## Rebase daily onto origin/main, early in the day, push with lease (ADR-0020).
+sync-daily: ## Rebase daily onto origin/main, early in the day, push with lease (ADR-0005).
 	$(PYTHON) -m scripts sync-daily
 
-wait-ci: ## Actively wait for CI on the pull request head: PR=N (ADR-0018).
+wait-ci: ## Actively wait for CI on the pull request head: PR=N (ADR-0006).
 	$(PYTHON) -m scripts wait-ci --pr-number "$(PR)"
 
-night: ## Run the unattended loop: ISSUES="12,13,14", MILESTONES="3,4", or auto-discovery when empty (ADR-0017).
+night: ## Run the unattended loop: ISSUES="12,13,14", MILESTONES="3,4", or auto-discovery when empty (ADR-0007).
 	$(PYTHON) -m scripts night --issues "$(ISSUES)" --milestones "$(MILESTONES)"
 
-review-bundle: ## Print the reviewer bundle against origin/daily (ADR-0010).
+review-bundle: ## Print the reviewer bundle against origin/daily (ADR-0006).
 	$(PYTHON) -m scripts review-bundle --base-ref origin/daily
 
 clean: ## Remove caches, build outputs and mutation cache.

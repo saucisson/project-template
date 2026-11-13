@@ -1,16 +1,16 @@
-r"""The reviewer agent: one local session, one structured verdict (ADR-0010).
+r"""The reviewer agent: one local session, one structured verdict (ADR-0006).
 
 The reviewer is a headless Vibe Code session (``vibe --prompt-file``)
 launched in an ISOLATED empty directory whose only content is the
 review bundle (built by ``make review-bundle``). Isolation is enforced
 by construction: the session sees no repository, no AGENTS.md and no
-session history - only the bundle (ADR-0010). It answers with a JSON
+session history - only the bundle (ADR-0006). It answers with a JSON
 report; this driver recomputes every count locally, fails closed on
 anything it cannot verify, and exits with a status the merge driver
 (``make merge-pr``) gates on.
 
 The session spends the INCLUDED usage of the local Vibe Code plan,
-not pay-per-token API calls - that is the point of ADR-0010.
+not pay-per-token API calls - that is the point of ADR-0006.
 """
 
 import json
@@ -53,7 +53,7 @@ class ReviewProtocolError(RuntimeError):
 
 
 class FindingSeverity(StrEnum):
-    """The severity ladder of the review report (ADR-0010)."""
+    """The severity ladder of the review report (ADR-0006)."""
 
     BLOCKING = "BLOCKING"
     TO_FIX = "TO-FIX"
@@ -117,11 +117,11 @@ evidence, then recommendation). Zero findings is a valid answer."""
 
 
 def load_model_name() -> str:
-    """The reviewing model; empty means the CLI's active model (ADR-0010).
+    """The reviewing model; empty means the CLI's active model (ADR-0006).
 
     Set ``REVIEWER_MODEL`` to point the session at a different model
     family than the developer agent - the model-diversity lever of
-    ADR-0010 survives the move to local sessions.
+    ADR-0006 survives the move to local sessions.
     """
     return os.environ.get(REVIEWER_MODEL_VARIABLE, "").strip()
 
@@ -359,10 +359,10 @@ def render_markdown_comment(
         comment_sections.append("Zero findings.")
     comment_sections.append("")
     comment_sections.append(
-        "The reviewer never merges and never modifies code (ADR-0010)."
+        "The reviewer never merges and never modifies code (ADR-0006)."
         " The merge driver (`make merge-pr`) refuses to merge while any"
         " BLOCKING finding stands; merging into `daily` is executed by"
-        " the developer agent on this report (ADR-0009)."
+        " the developer agent on this report (ADR-0005)."
     )
     return "\n".join(comment_sections)
 
@@ -371,8 +371,8 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
     """Register the agent-review subcommand."""
     subparser = subparsers.add_parser(
         "agent-review",
-        help="Run the local reviewer session on a review bundle (ADR-0010).",
-        description="Run the local reviewer session on a review bundle (ADR-0010).",
+        help="Run the local reviewer session on a review bundle (ADR-0006).",
+        description="Run the local reviewer session on a review bundle (ADR-0006).",
     )
     subparser.add_argument(
         "--bundle-file",

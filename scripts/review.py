@@ -1,4 +1,4 @@
-"""Local review orchestrator and bundle builder (ADR-0010).
+"""Local review orchestrator and bundle builder (ADR-0006).
 
 ``review`` runs on the developer machine, on the pull request branch
 checkout: it fetches the pull request description from the GitHub API,
@@ -10,17 +10,18 @@ failure, 3 preconditions unmet (the review never started: head not
 pushed or CI not concluded on it - not a verdict, not an attempt).
 
 ``review-bundle`` assembles the deterministic review bundle: the
-reviewer's ENTIRE context - role contract, architecture rules, review
-checklist, the relevant ADRs, the pull request specification and the
-diff under review. Nothing else enters the prompt - context isolation
-is enforced by construction, not by prompt discipline. Stdlib only,
+reviewer's ENTIRE context - the rules document (role contract,
+architecture rules, review checklist), the ADRs, the pull request
+specification and the diff under review. Nothing else enters the
+prompt - context isolation is enforced by construction, not by
+prompt discipline. Stdlib only,
 so it runs in the bareest CI image: this module defers its
 ``httpx``-dependent imports into the ``review`` runner, on purpose.
 
 The developer agent runs ``review`` after opening a pull request and
 only once CI has concluded on the pushed head: the driver refuses to
 review a stale head or a red one - the review is the last gate, never
-a substitute for a failing local gate (ADR-0010).
+a substitute for a failing local gate (ADR-0006).
 """
 
 import json
@@ -47,9 +48,7 @@ if TYPE_CHECKING:
     import httpx
 
 REVIEW_DIRECTORY = REPOSITORY_ROOT / ".review"
-ROLE_DOCUMENT_PATH = REPOSITORY_ROOT / "docs/agents/reviewer.md"
-ARCHITECTURE_DOCUMENT_PATH = REPOSITORY_ROOT / "docs/architecture.md"
-CHECKLIST_DOCUMENT_PATH = REPOSITORY_ROOT / "docs/review-checklist.md"
+RULES_DOCUMENT_PATH = REPOSITORY_ROOT / "docs/rules.md"
 DECISIONS_DIRECTORY_PATH = REPOSITORY_ROOT / "docs/decisions"
 SECTION_SEPARATOR = "\n\n---\n\n"
 NO_DESCRIPTION_TEXT = "No pull request description was provided."
@@ -83,9 +82,7 @@ def render_bundle(
 ) -> str:
     """Assemble the bundle sections in a fixed, deterministic order."""
     sections: list[str] = []
-    sections.append("## ROLE CONTRACT\n\n" + read_text_file(path=ROLE_DOCUMENT_PATH))
-    sections.append("## ARCHITECTURE RULES\n\n" + read_text_file(path=ARCHITECTURE_DOCUMENT_PATH))
-    sections.append("## REVIEW CHECKLIST\n\n" + read_text_file(path=CHECKLIST_DOCUMENT_PATH))
+    sections.append("## RULES AND CHECKLIST\n\n" + read_text_file(path=RULES_DOCUMENT_PATH))
     for decision_title, decision_content in decisions:
         sections.append(f"## DECISION - {decision_title}\n\n{decision_content}")
     sections.append(f"## PULL REQUEST SPECIFICATION\n\n{description_text}")
@@ -97,8 +94,8 @@ def register_review_bundle(subparsers: argparse._SubParsersAction[argparse.Argum
     """Register the review-bundle subcommand: one diff source, optional description."""
     subparser = subparsers.add_parser(
         "review-bundle",
-        help="Assemble the deterministic review bundle (ADR-0010).",
-        description="Assemble the deterministic review bundle (ADR-0010).",
+        help="Assemble the deterministic review bundle (ADR-0006).",
+        description="Assemble the deterministic review bundle (ADR-0006).",
     )
     diff_source = subparser.add_mutually_exclusive_group(required=True)
     diff_source.add_argument(
@@ -154,7 +151,7 @@ def review_preconditions_refusal(
     """Return the reason the review cannot start; None means: proceed.
 
     The review is the last gate: it never substitutes for a failing or
-    unfinished local gate (ADR-0010). Every refusal exits with code 3
+    unfinished local gate (ADR-0006). Every refusal exits with code 3
     (preconditions unmet): not a review verdict, not an attempt - the
     developer agent waits (or pushes), then re-runs ``make review``.
     """
@@ -213,7 +210,7 @@ def write_review_context(
     head_sha: str,
     review_directory: Path,
 ) -> None:
-    """Write the review context the merge driver will verify (ADR-0009).
+    """Write the review context the merge driver will verify (ADR-0005).
 
     The report alone cannot prove which pull request it reviewed; this
     context binds it to the pull request number and the exact head SHA
@@ -257,8 +254,8 @@ def register_review(subparsers: argparse._SubParsersAction[argparse.ArgumentPars
     """Register the review subcommand."""
     subparser = subparsers.add_parser(
         "review",
-        help="Run the local review of one pull request (ADR-0010).",
-        description="Run the local review of one pull request (ADR-0010).",
+        help="Run the local review of one pull request (ADR-0006).",
+        description="Run the local review of one pull request (ADR-0006).",
     )
     subparser.add_argument(
         "--pr-number",

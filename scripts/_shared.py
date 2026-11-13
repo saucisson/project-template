@@ -1,4 +1,4 @@
-"""Shared plumbing for every driver command (ADR-0021).
+"""Shared plumbing for every driver command (ADR-0001).
 
 Each module of this package is one driver domain; the plumbing every
 driver repeats - the ``.env`` loader, the GitHub token, the repository
@@ -7,7 +7,7 @@ so a driver module carries only its own protocol.
 
 Stdlib only, on purpose: the git-only subcommands (``day-report``,
 ``sync-daily``) import this module and must run without ``httpx``
-(ADR-0021); the GitHub API helpers live in ``_github`` instead.
+(ADR-0001); the GitHub API helpers live in ``_github`` instead.
 """
 
 import os
