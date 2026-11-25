@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def _write_component(directory: "Path", name: str, content: str) -> "Path":
+def _write_component(directory: Path, name: str, content: str) -> Path:
     """Write one bundle component file into the temporary directory."""
     component_path = directory / name
     component_path.write_text(content, encoding="utf-8")
@@ -19,7 +19,7 @@ def _write_component(directory: "Path", name: str, content: str) -> "Path":
 
 
 def test_render_bundle_includes_engineering_rules(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: "Path"
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """The engineering rules document sits between the rules and the ADRs."""
     rules_path = _write_component(tmp_path, name="rules.md", content="RULES")
@@ -45,7 +45,7 @@ def test_render_bundle_includes_engineering_rules(
 
 
 def test_render_bundle_refuses_a_missing_engineering_document(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: "Path"
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """A missing engineering rules document fails loudly instead of skipping."""
     rules_path = _write_component(tmp_path, name="rules.md", content="RULES")
