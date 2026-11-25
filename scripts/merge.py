@@ -2,8 +2,9 @@
 
 The developer agent merges each completed pull request into ``daily``
 - through this driver and nothing else. The driver IS the codified
-merge criteria: it refuses to merge unless the review report exists,
-was written for THIS pull request and its CURRENT head (review
+merge criteria: it refuses to merge unless the pull request targets
+`daily` only (an agent never merges `main`; A1), the review report
+exists, was written for THIS pull request and its CURRENT head (review
 context), contains zero BLOCKING findings, the pull request is open
 and mergeable, and every check run on its head has concluded
 "success". Then it merges through the GitHub API with the linear
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
 
 DEFAULT_REPORT_FILE_NAME = ".review/review-report.json"
 DEFAULT_CONTEXT_FILE_NAME = ".review/review-context.json"
+BASE_BRANCH_NAME = "daily"  # ADR-0005: agent merges land on daily, never main
 MERGE_METHOD_PREFERENCE = ("rebase", "squash")
 METHOD_NOT_ALLOWED_STATUS_CODE = 405
 EXIT_CODE_MERGED = EXIT_CODE_SUCCESS  # a subcommand-local alias, same protocol code
@@ -178,6 +180,12 @@ def resolve_merge_method(
     raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
 
 
+def extract_base_ref(*, pull_request: dict[str, object]) -> str:
+    """Return the pull request base branch name, empty when unknown."""
+    base_container = pull_request.get("base")
+    return base_container.get("ref", "") if isinstance(base_container, dict) else ""
+
+
 def evaluate_merge_criteria(  # noqa: PLR0911 - one return per codified criterion (ADR-0005)
     *,
     report: dict[str, object],
@@ -185,6 +193,13 @@ def evaluate_merge_criteria(  # noqa: PLR0911 - one return per codified criterio
     check_runs: Sequence[dict[str, object]],
 ) -> tuple[bool, str]:
     """Apply the codified merge criteria (ADR-0005); return (ok, reason)."""
+    base_ref = extract_base_ref(pull_request=pull_request)
+    if base_ref != BASE_BRANCH_NAME:
+        return False, (
+            f"the pull request targets `{base_ref or 'an unknown branch'}`"
+            f", not `{BASE_BRANCH_NAME}` - agent tooling merges into"
+            " `daily` only (A1: no agent ever merges `main`)"
+        )
     blocking_count = report.get("blocking_count")
     if blocking_count is None:
         return False, "the review report has no blocking_count - rerun the review"
