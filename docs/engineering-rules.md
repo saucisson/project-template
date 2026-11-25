@@ -191,8 +191,7 @@ ports-and-adapters ceremony.
 - **E4.** Mocks at the system edge only (clock, external APIs). Never
   between classes the project owns: prefer inexpensive reals
   (in-memory stores, ephemeral databases, fakes owned by the repo)
-  over mock mirrors of the implementation. A mock-heavy 
-unit suite
+  over mock mirrors of the implementation. A mock-heavy unit suite
   fails on every legitimate refactoring, and the agent then adjusts
   the tests - exactly what A6 forbids.
 - **E5.** Characterization before big refactors. Before any structural
@@ -380,8 +379,7 @@ single `verify` gate, structure checks.
   with `never`; `unknown` narrowing at edges; no `any`; named
   exports only; one concept per file; no barrels; single-object
   named parameters; linear functions with
-  `// ---- phase ----` banners; 
-bounded nesting; functional data
+  `// ---- phase ----` banners; bounded nesting; functional data
   handling with mutation only where the mechanism is mutation and is
   marked.
 - Expected errors as values; the domain is total; the executable
@@ -417,8 +415,7 @@ entry with every commit and PR.
   inputs. Generalize to every performance claim a reduction makes.
 - serde discipline at boundaries: tagged enums for wire variants,
   explicit version discriminator, `deny_unknown_fields` where replay
-  determinism matt
-ers (and permissive readers where forward
+  determinism matters (and permissive readers where forward
   compatibility is the goal - F5 decides per format).
 - Non-inferable constraints live as doc comments on the type they
   constrain (e.g., send-ness or freshness requirements on a runner
@@ -601,7 +598,6 @@ night loop's health metric.
 
 *8.6 Stated limits.* Finite scope in v1: queue, drive-to, verdict,
 sync - no boards, no metrics dashboards. The console never re-tests
-
 what CI already attests. Endpoints are owner-only, never public (P4
 boundary: the ledger is acceptance data). Capacity note: the owner is
 the throughput ceiling of a denser loop - if a night produces eight
