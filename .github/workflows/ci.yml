@@ -27,7 +27,14 @@ jobs:
         run: uv sync --locked
 
       - name: Ruff lint
-        run: uv run ruff check .
+        run: |
+          set +e
+          uv run ruff check .
+          ruff_status=$?
+          if [ "$ruff_status" -ne 0 ]; then
+            uv run ruff check . --output-format=github || true
+          fi
+          exit "$ruff_status"
 
       - name: Ruff format check
         run: uv run ruff format --check .
