@@ -194,8 +194,7 @@ def probe_single_commit(*, context: WorktreeContext, commit: str) -> CommitVerdi
     checkout = try_git(arguments=["-C", str(context.directory), "checkout", "--detach", commit])
     if checkout.returncode != EXIT_CODE_SUCCESS:
         print(
-            f"Error: cannot check out {commit} in the probe worktree:"
-            f" {checkout.stderr.strip()}",
+            f"Error: cannot check out {commit} in the probe worktree: {checkout.stderr.strip()}",
             file=sys.stderr,
         )
         raise SystemExit(EXIT_CODE_PROTOCOL_FAILURE)
@@ -287,10 +286,7 @@ def run(*, arguments: argparse.Namespace) -> int:
         print_verdict(verdict=verdict)
     green_commit_count = sum(verdict.failing_front is None for verdict in verdicts)
     if green_commit_count == len(verdicts):
-        print(
-            f"Probe verdict: {len(verdicts)}/{len(verdicts)} commits green"
-            " on the fast fronts."
-        )
+        print(f"Probe verdict: {len(verdicts)}/{len(verdicts)} commits green on the fast fronts.")
         return EXIT_CODE_SUCCESS
     print(
         f"Probe verdict: {green_commit_count}/{len(verdicts)} commits green -"
