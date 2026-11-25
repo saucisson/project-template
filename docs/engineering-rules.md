@@ -543,6 +543,11 @@ pending validation. Nothing stagnates invisibly.
 **N8 - The validation console (in-product human verification
 loop).**
 
+These console rules are directives only: this template carries the
+doctrine; each instantiated repository implements its own console
+mechanics per product surface (`docs/deployment.md` records the same
+per-repo principle for the deployment channels).
+
 *8.1 Scenario source (driver-enforced).* Every PR with user-visible
 impact ships a validation scenario, written by the developer agent,
 in `docs/validations/v-<PR>.yaml`:
