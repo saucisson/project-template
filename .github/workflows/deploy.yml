@@ -1,0 +1,45 @@
+name: deployment
+
+# ADR-0008 N3: the merge is the deploy trigger. `daily` deploys to the
+# staging channel (the OVH VPS today), `main` to the release channel;
+# the branch name selects the target, its GitHub environment and its
+# secrets. The template ships the connection smoke; an instance replaces
+# the remote command with its real distribution (docs/deployment.md).
+
+on:
+  push:
+    branches: [daily, main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging-or-release:
+    name: deploy to ${{ github.ref_name == 'main' && 'release' || 'staging' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'release' || 'staging' }}
+    steps:
+      - name: Checkout the deployed tree
+        uses: actions/checkout@v5
+
+      - name: Resolve the deployment target from the branch name
+        run: |
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            echo "DEPLOY_TARGET=release" >> "$GITHUB_ENV"
+          else
+            echo "DEPLOY_TARGET=staging" >> "$GITHUB_ENV"
+          fi
+
+      - name: Connect to the target host (distribution smoke)
+        env:
+          DEPLOY_KEY: ${{ secrets[format('{0}_SSH_KEY', env.DEPLOY_TARGET)] }}
+          DEPLOY_HOST: ${{ secrets[format('{0}_HOST', env.DEPLOY_TARGET)] }}
+          DEPLOY_USER: ${{ secrets[format('{0}_USER', env.DEPLOY_TARGET)] }}
+        run: |
+          key_path="$RUNNER_TEMP/deploy_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$key_path"
+          chmod 600 "$key_path"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -i "$key_path" \
+            "$DEPLOY_USER@$DEPLOY_HOST" "true"
+          rm -f "$key_path"
