@@ -1,0 +1,41 @@
+name: format-helper
+
+on:
+  push:
+    branches: [work/n2-dependency-admission]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    name: ruff format, push back (temporary branch helper)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: work/n2-dependency-admission
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.15"
+          enable-cache: true
+
+      - name: Sync the locked environment
+        run: uv sync --locked
+
+      - name: ruff format
+        run: uv run ruff format .
+
+      - name: Commit and push the formatted tree
+        run: |
+          git config user.name "format-helper bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "already formatted"
+            exit 0
+          fi
+          git commit -m "style: ruff format (temporary branch helper)"
+          git push origin HEAD:work/n2-dependency-admission
