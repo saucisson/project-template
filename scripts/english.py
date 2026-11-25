@@ -433,9 +433,9 @@ def run(*, arguments: argparse.Namespace) -> int:
         return EXIT_CODE_PROTOCOL_FAILURE
     subject_lines = message_text.splitlines()
     subject = subject_lines[0] if subject_lines else ""
-    offender = scan_subject(subject=subject)
-    if offender is not None:
-        print(f"english-only: {offender}")
+    subject_offender = scan_subject(subject=subject)
+    if subject_offender is not None:
+        print(f"english-only: {subject_offender}")
         print("english-only: the commit subject must be English (ADR-0008 N4).")
         return EXIT_CODE_CRITERIA_UNMET
     return EXIT_CODE_SUCCESS
