@@ -15,7 +15,6 @@ happens, ``main`` and ``daily`` are never written. The probe reports
 and exits; it never repairs.
 """
 
-import argparse
 import os
 import subprocess
 import sys
@@ -33,6 +32,7 @@ from scripts._shared import (
 )
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Sequence
 
 DEFAULT_BASE_REF = "origin/daily"
@@ -218,7 +218,7 @@ def cleanup_worktree(*, context: WorktreeContext) -> None:
     removal = try_git(arguments=["worktree", "remove", "--force", str(context.directory)])
     if removal.returncode != EXIT_CODE_SUCCESS:
         print(
-            f"Warning: could not remove the probe worktree"
+            "Warning: could not remove the probe worktree"
             f" {context.directory}: {removal.stderr.strip()}",
         )
         return
