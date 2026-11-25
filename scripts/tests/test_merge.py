@@ -124,7 +124,9 @@ def test_criteria_refuse_an_unmergeable_pull_request() -> None:
 
 def test_criteria_refuse_incomplete_check_runs() -> None:
     """A check run that did not conclude is a refusal."""
-    check_runs = [{"name": "quality gate", "status": "in_progress", "conclusion": None}]
+    check_runs: list[dict[str, object]] = [
+        {"name": "quality gate", "status": "in_progress", "conclusion": None},
+    ]
     accepted, reason = merge.evaluate_merge_criteria(
         report=_clean_report(),
         pull_request=_clean_pull_request(),
@@ -136,7 +138,9 @@ def test_criteria_refuse_incomplete_check_runs() -> None:
 
 def test_criteria_refuse_failed_check_runs() -> None:
     """A completed check run without success is a refusal."""
-    check_runs = [{"name": "quality gate", "status": "completed", "conclusion": "failure"}]
+    check_runs: list[dict[str, object]] = [
+        {"name": "quality gate", "status": "completed", "conclusion": "failure"},
+    ]
     accepted, reason = merge.evaluate_merge_criteria(
         report=_clean_report(),
         pull_request=_clean_pull_request(),
