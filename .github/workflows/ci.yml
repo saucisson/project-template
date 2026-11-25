@@ -36,14 +36,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: mypy strict
-        run: |
-          set +e
-          uv run mypy tools/notify/src tools/notify/tests scripts > /tmp/mypy.txt 2>&1
-          status=$?
-          if [ "$status" -ne 0 ]; then
-            while IFS= read -r line; do echo "::error ::$line"; done < /tmp/mypy.txt
-            exit "$status"
-          fi
+        run: uv run mypy tools/notify/src tools/notify/tests scripts
 
       - name: import-linter onion contract
         run: uv run lint-imports
