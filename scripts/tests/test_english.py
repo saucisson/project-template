@@ -1,6 +1,7 @@
 """Tests for the English-only front scripts/english.py (ADR-0008 G4, N4)."""
 
 import argparse
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from scripts import english
@@ -11,8 +12,6 @@ from scripts._shared import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     import pytest
 
 # Accented characters are built from code points: this test file itself
