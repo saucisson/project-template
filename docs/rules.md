@@ -43,18 +43,18 @@ single dependency direction: inward, toward the data. The layers below
 are those of the notify tool, the reference application.
 
 ```text
-┌─────────────────────────────────────────┐
+┌─────────────────────────────────────────────┐
 │ main (composition root)                     │  wires everything, configures logging
-│  ┌───────────────────────────────────────────┐  │
+│  ┌───────────────────────────────────────┐  │
 │  │ infrastructure (adapters)             │  │  console, Discord, future I/O
-│  │  ┌────────────────────────────────────┐  │  │
+│  │  ┌─────────────────────────────────┐  │  │
 │  │  │ services (pure logic)           │  │  │  orchestration, ports
 │  │  │  ┌───────────────────────────┐  │  │  │
 │  │  │  │ models (domain language)  │  │  │  │  validated data, errors, settings
 │  │  │  └───────────────────────────┘  │  │  │
-│  │  └───────────────────────────────────┘  │  │
+│  │  └─────────────────────────────────┘  │  │
 │  └───────────────────────────────────────┘  │
-└───────────────────────────────────────┘
+└─────────────────────────────────────────────┘
 ```
 
 The rule, enforced mechanically (for the Python tools: import-linter,
@@ -323,8 +323,8 @@ the reviewer answers from the bundle alone.
 The review bundle (this document, the ADRs, the pull request
 specification, the diff) is built deterministically by
 `make review-bundle`. The reviewer answers with a **JSON report**
-(`findings` with `severity`, `file`, `line`, `rule`, `evidence`).
-The driver script recomputes all counts locally and fails closed: an
+(`findings` with `severity`, `file`, `line`, `rule`, `evidence`). The
+driver script recomputes all counts locally and fails closed: an
 unknown severity is recorded as BLOCKING, an invalid answer is a
 protocol failure. Exit codes drive the merge:
 
