@@ -33,6 +33,10 @@ The subcommand takes two shapes:
 An instance that must keep an in-scope file in French argues the
 addition to ``ALLOWED_EXACT`` per PR, reviewed like any change; lock
 files are machine-generated and never scanned.
+
+The package targets Python 3.15: the sources use unparenthesized
+multi-exception ``except`` clauses, which parse only from Python 3.14,
+so nothing under 3.14 can import ``scripts``.
 """
 
 import dataclasses
