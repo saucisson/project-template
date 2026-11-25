@@ -75,9 +75,7 @@ def test_scan_corpus_flags_french_identifier_parts() -> None:
 
 def test_scan_corpus_leaves_english_identifiers_alone() -> None:
     """Legitimate English words never appear in the stem lexicon."""
-    offender = english.scan_corpus(
-        Path("x.py"), "upgrade = 1", stop_words=False, identifiers=True
-    )
+    offender = english.scan_corpus(Path("x.py"), "upgrade = 1", stop_words=False, identifiers=True)
     assert offender is None
 
 
@@ -162,9 +160,7 @@ def test_is_allowed_skips_lock_files() -> None:
     assert english.is_allowed(Path("docs/rules.md")) is False
 
 
-def test_scan_file_plain_text_contracts(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_scan_file_plain_text_contracts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Plain-text configuration: stop-words apply, identifiers do not."""
     monkeypatch.setattr(english, "REPOSITORY_ROOT", tmp_path)
     (tmp_path / ".gitignore").write_text("le build\n", encoding="utf-8")

@@ -326,7 +326,7 @@ def scan_python(relative: Path, text: str) -> Offender | None:
     """Scan a Python file through its three corpora."""
     try:
         names, comments, strings = python_corpus(text)
-    except (SyntaxError, tokenize.TokenError, IndentationError):
+    except SyntaxError, tokenize.TokenError, IndentationError:
         return scan_corpus(relative, text, stop_words=True, identifiers=False)
     offender = scan_corpus(relative, "\n".join(comments), stop_words=True, identifiers=True)
     if offender is not None:
@@ -343,7 +343,7 @@ def scan_file(relative: Path) -> Offender | None:
         return None
     try:
         text = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
+    except OSError, UnicodeDecodeError:
         return None  # Binary or unreadable (logos, fixtures): out of scope.
     suffix = relative.suffix
     if suffix == ".py":
