@@ -79,7 +79,7 @@ def ensure_clean_work_tree() -> None:
     if completed_process.stdout.strip():
         print(
             "Probe refused: the working tree has uncommitted changes -"
-            " commit or stash them first; the probe replays commits,
+            " commit or stash them first; the probe replays commits,"
             " not the working tree.",
             file=sys.stderr,
         )
@@ -252,7 +252,7 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
             " onto the base inside a throwaway worktree and requires"
             " every replayed commit to be green on the fast fronts"
             " (lint, typecheck, imports). Never opens a PR, never"
-            " pushes, never writes main or daily.",
+            " pushes, never writes main or daily."
         ),
     )
     subparser.add_argument(
