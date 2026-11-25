@@ -1,14 +1,16 @@
 """Tests for the license gate scripts/license_gate.py (ADR-0008 N2)."""
 
 import argparse
-
-import pytest
+from typing import TYPE_CHECKING
 
 from scripts import license_gate
 from scripts._shared import (
     EXIT_CODE_CRITERIA_UNMET,
     EXIT_CODE_SUCCESS,
 )
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def test_expression_or_passes_when_one_operand_is_allowed() -> None:
@@ -53,7 +55,8 @@ def test_license_violation_expression_decides_first() -> None:
 
 
 def test_license_violation_classifiers_pass_on_any_allowed_name() -> None:
-    """Multiple classifier names pass when one is allowed."""
+    """M
+ultiple classifier names pass when one is allowed."""
     assert (
         license_gate.license_violation(
             expression="", license_classifiers=("MIT License", "GPL License"), legacy_license=""
