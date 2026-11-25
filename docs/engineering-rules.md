@@ -39,7 +39,8 @@ artifacts of a system. The strongest rules live at those durable
 boundaries; everything inside is deliberately fluid.
 
 **P5. Detection points have a strict cost order: compilation < test <
-review.** Types and CI are the cheapest, most deterministic oracles,
+revie
+w.** Types and CI are the cheapest, most deterministic oracles,
 and an agent cannot negotiate with a compiler. Tests sample behavior
 and cannot be argued with if written against contracts. Human review
 is the scarcest resource; it must be aimed at what no other oracle
@@ -80,7 +81,8 @@ ports-and-adapters ceremony.
 - **A4.** The morning directive is human property. Agents never edit
   it.
 - **A5.** Budgets: 3 attempts per issue across the whole
-  develop-review loop; third failure labels `blocked` +
+  develop-review loop; third failure labels `blocke
+d` +
   `needs-human` and moves on. Answered `needs-human` issues take
   priority over new work. Urgent escalation is a full stop of merges.
 - **A6.** Honesty rules: report evidence actually run and say so when
@@ -89,9 +91,10 @@ ports-and-adapters ceremony.
   verification gate (`make check` / `npm run verify`) before
   reporting anything.
 - **A7.** The escalation list is the inventory of durable boundaries:
-  security and secrets; dependencies per N2; architecture changes;
-  schema and data migrations; constitutional files; ADR-worthy
-  decisions. Everything on it requires the human before work starts.
+  security and secrets; architecture changes; schema and data
+  migrations; constitutional files; ADR-worthy decisions. Everything
+  on it requires the human before work starts. Dependencies are not
+  on it: N2 owns the dependency loop end to end.
 - **A8.** The reviewer session of a consequential change runs a
   different model family than the developer session. This decorrelates
   the systematic errors of generator and judge, which no prompt
@@ -115,7 +118,8 @@ ports-and-adapters ceremony.
   speculative generality - the generator's native failure mode:
   interfaces with one implementation, factories of one product,
   options nobody passes, premature frameworks.
-- **B4.** Blast-radius accounting. Two independent copies that change
+- **B4.** Blast-radius accounting. Two independent copies that chan
+ge
   for different reasons beat one shared abstraction coupling two
   modules. DRY is an evidence-based decision, not a reflex.
 - **B5.** Composition root only: no global singletons, no service
@@ -154,7 +158,8 @@ ports-and-adapters ceremony.
 
 ### D. Errors and observability
 
-- **D1.** Expected errors are typed values (Result patterns, typed
+- **
+D1.** Expected errors are typed values (Result patterns, typed
   diagnostics); exceptions mean bugs. Causes are preserved; nothing is
   swallowed. The domain is total.
 - **D2.** Logging replaces comments: `DEBUG` narrates sections with
@@ -190,7 +195,8 @@ ports-and-adapters ceremony.
 - **E4.** Mocks at the system edge only (clock, external APIs). Never
   between classes the project owns: prefer inexpensive reals
   (in-memory stores, ephemeral databases, fakes owned by the repo)
-  over mock mirrors of the implementation. A mock-heavy unit suite
+  over mock mirrors of the implementation. A mock-heavy 
+unit suite
   fails on every legitimate refactoring, and the agent then adjusts
   the tests - exactly what A6 forbids.
 - **E5.** Characterization before big refactors. Before any structural
@@ -226,7 +232,8 @@ ports-and-adapters ceremony.
   code that needs them, never in the same blind commit as a schema
   change. No down migrations: restore from backup, then fix forward.
 - **F4.** Expand/contract by default: add, backfill, switch,
-  contract - never break the shape mid-deploy. At agent iteration
+  co
+ntract - never break the shape mid-deploy. At agent iteration
   speed the old and new code coexist more often, not less.
 - **F5.** Persisted documents and event traces carry an explicit
   schema version; readers of historical data fail loudly on versions
@@ -260,7 +267,8 @@ ports-and-adapters ceremony.
   Answer the human in their language; the artifacts are English.
   Enforcement is mechanical: an english-only checker runs as a
   verification front, and a commit-msg hook rejects non-English
-  subjects. Review is a late detector and costs review-loop
+  subjects. Rev
+iew is a late detector and costs review-loop
   iterations; the checker catches it at commit time.
 - **G5.** Docs have exactly two valid kinds: durable why (ADRs,
   invariants, rules) and contracts (maps over what the machine cannot
@@ -296,7 +304,8 @@ ports-and-adapters ceremony.
   approval authority stays human. Two models agreeing on
   plausible-but-wrong remains the known failure mode: the pre-review
   filters, it never certifies.
-- **H5.** Review is sequential, per commit: the PR body declares the
+- **H5.** Review is s
+equential, per commit: the PR body declares the
   global goal and the commit order as the frame; each commit is read
   against its own message, a declared contract (message matches
   content, one idea, the anchor test of any behavior change in the
@@ -331,7 +340,8 @@ ports-and-adapters ceremony.
 - **R8.** PR size budget: ~500 changed lines for all repos. If a
   change genuinely cannot split, the split proposal in the PR body is
   the escape valve, and the reviewer flags the exception. Review
-  locality is the one constraint the whole chain depends on (H3).
+  locality is the one const
+raint the whole chain depends on (H3).
 
 ---
 
@@ -378,7 +388,8 @@ single `verify` gate, structure checks.
   with `never`; `unknown` narrowing at edges; no `any`; named
   exports only; one concept per file; no barrels; single-object
   named parameters; linear functions with
-  `// ---- phase ----` banners; bounded nesting; functional data
+  `// ---- phase ----` banners; 
+bounded nesting; functional data
   handling with mutation only where the mechanism is mutation and is
   marked.
 - Expected errors as values; the domain is total; the executable
@@ -414,7 +425,8 @@ entry with every commit and PR.
   inputs. Generalize to every performance claim a reduction makes.
 - serde discipline at boundaries: tagged enums for wire variants,
   explicit version discriminator, `deny_unknown_fields` where replay
-  determinism matters (and permissive readers where forward
+  determinism matt
+ers (and permissive readers where forward
   compatibility is the goal - F5 decides per format).
 - Non-inferable constraints live as doc comments on the type they
   constrain (e.g., send-ness or freshness requirements on a runner
@@ -441,6 +453,10 @@ Every item binary, `file:line` evidence on every no:
 - [ ] Any persisted/wire format change ships: version bump + upgrade
       function (pure, chained, property-tested) + hard rejection gate
       for unhandled versions (F5).
+- [ ] Any new dependency ships its community-validation evidence in
+      the PR body, plus a real execution test and the correct
+      runtime/dev classification; missing or self-referential
+      evidence is a BLOCKING finding (N2).
 - [ ] Big refactors (multi-file structural sweeps) are preceded by
       characterization tests in the diff or in an immediately prior
       PR (E5).
@@ -459,7 +475,8 @@ Every item binary, `file:line` evidence on every no:
 
 ## Part IV - Night loop
 
-Unattended (`make night`) execution is the throughput mode; the
+Unattended (`make night`) execution is the
+ throughput mode; the
 morning is a short, by-usage acceptance session. The rules below make
 an interrupted run leave progress rather than debris, and make the
 human verdict land in the repository as data.
@@ -471,14 +488,21 @@ morning action, minutes) flips the ADR to `accepted` and enables the
 flag. Constitutional files are still never edited by agents; drafts
 add no such risk.
 
-**N2 - Dependency allowlist.** A per-ecosystem allowlist lives in the
-template (constitutional, but pre-approved by its very nature):
-community-standard packages plus minor/patch bumps of
-already-approved dependencies. An agent adds an allowed dependency
-freely, with a real execution test and correct runtime/dev
-classification. Anything off-list escalates as today. Mechanically:
-an installation smoke on the packaged artifact catches runtime/dev
-classification misses; dependency bots target `daily` only, grouped,
+**N2 - Dependency admission by argued evidence, not by list.** No
+pre-populated package allowlist: a maintained list silently delegates
+the judgment to whoever last edited it, and it goes stale. The agent
+that wants a new dependency argues community validation itself, in
+the pull request: sustained maintenance, adoption beyond the
+package's own documentation, an ecosystem standing it can point to.
+The reviewer verifies the evidence, not the taste - an unargued or
+self-referential adoption is a BLOCKING finding. A real execution
+test and the correct runtime/dev classification ship with the
+change; an installation smoke of the packaged artifact still catches
+classification misses. The mechanical fronts fail closed in CI on
+every pull request: the license gate rejects every license outside
+the repository's configured set (configuration, not constitution),
+and the vulnerability audit rejects every known CVE in the locked
+graph. Dependency bots target the integration branch only, grouped,
 with auto-merge for dev minor bumps.
 
 **N3 - Imperfect proposals + verification.** A night run ends with a
@@ -496,7 +520,8 @@ non-English subjects. Prose in comments, identifiers, worklogs and
 titles is checked at commit time, not discovered by review.
 
 **N5 - Tooling `daily` -> `main`.** Merge probes run as a local
-dry-run (`make probe-merge`), never as PRs. The driver slices
+dry-run (`make probe-merge`), never as PRs. The driver s
+lices
 automatically and opens the merge PRs with a generated report
 (per-commit provenance, worklog refs, flag inventory). Automating the
 merge itself (same criteria as A2, flags off, smoke green on the
@@ -541,7 +566,8 @@ claims on diffs that visibly changed behavior.
 *8.2 Served queue.* `GET /api/validations` - owner-only (OIDC),
 returns the pending scenarios for the current build together with the
 deployed commit SHA. The contract is versioned per F5
-(`schema_version`; unknown versions rejected loudly). The manifest
+(`schema_version`; u
+nknown versions rejected loudly). The manifest
 ships with the artifact: no dedicated database on day one.
 
 *8.3 Console UI* (develop mode of each deployed site, owner account
@@ -581,6 +607,7 @@ night loop's health metric.
 
 *8.6 Stated limits.* Finite scope in v1: queue, drive-to, verdict,
 sync - no boards, no metrics dashboards. The console never re-tests
+
 what CI already attests. Endpoints are owner-only, never public (P4
 boundary: the ledger is acceptance data). Capacity note: the owner is
 the throughput ceiling of a denser loop - if a night produces eight
