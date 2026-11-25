@@ -6,6 +6,11 @@ and the binary checklist the reviewer applies to every diff. It is
 `docs/decisions/README.md`). The reasoning behind every rule is in the
 ADRs referenced throughout.
 
+The agent-era engineering rules - the token economics, the typing and
+abstraction doctrine, the test doctrine, durable data, review
+allocation and the night loop - are `docs/engineering-rules.md`
+(ADR-0008). Where the two documents overlap, that document governs.
+
 The rules are **language- and tool-agnostic**: they bind any instance
 of the template, in whatever language it builds its product. The
 concrete tools enforcing them in this repository (Ruff, mypy, structlog,
@@ -38,18 +43,18 @@ single dependency direction: inward, toward the data. The layers below
 are those of the notify tool, the reference application.
 
 ```text
-┌─────────────────────────────────────────────┐
-│ main (composition root)                     │  wires everything, configures logging
-│  ┌───────────────────────────────────────┐  │
-│  │ infrastructure (adapters)             │  │  console, Discord, future I/O
-│  │  ┌─────────────────────────────────┐  │  │
-│  │  │ services (pure logic)           │  │  │  orchestration, ports
-│  │  │  ┌───────────────────────────┐  │  │  │
-│  │  │  │ models (domain language)  │  │  │  │  validated data, errors, settings
-│  │  │  └───────────────────────────┘  │  │  │
-│  │  └─────────────────────────────────┘  │  │
-│  └───────────────────────────────────────┘  │
-└─────────────────────────────────────────────┘
++---------------------------------------------+
+| main (composition root)                     |  wires everything, configures logging
+|  +---------------------------------------+  |
+|  | infrastructure (adapters)             |  |  console, Discord, future I/O
+|  |  +---------------------------------+  |  |
+|  |  | services (pure logic)           |  |  |  orchestration, ports
+|  |  |  +---------------------------+  |  |  |
+|  |  |  | models (domain language)  |  |  |  |  validated data, errors, settings
+|  |  |  +---------------------------+  |  |  |
+|  |  +---------------------------------+  |  |
+|  +---------------------------------------+  |
++---------------------------------------------+
 ```
 
 The rule, enforced mechanically (for the Python tools: import-linter,
@@ -102,7 +107,7 @@ of the onion.
 - **Linear over decomposed.** Prefer a longer, readable, flat function
   over arbitrary extraction. Extract only when the block is reused at
   least twice or carries a name-worthy intention of its own.
-- Complexity budget ≤ 10, nesting depth ≤ 4.
+- Complexity budget <= 10, nesting depth <= 4.
 - Docstrings on every public callable.
 - Conventional Commits, enforced by review and release-please.
 
@@ -164,8 +169,8 @@ binary**: yes or no, with `file:line` evidence for every "no".
 
 ### 1. Architecture and imports
 
-- [ ] All dependencies point strictly inward (`models` → nothing,
-      `services` → `models`, `infrastructure` → inner layers, `main` → all).
+- [ ] All dependencies point strictly inward (`models` -> nothing,
+      `services` -> `models`, `infrastructure` -> inner layers, `main` -> all).
 - [ ] `models` contains no I/O, no orchestration.
 - [ ] I/O happens only in `infrastructure` adapters, behind a port
       (`services/ports.py`).
@@ -181,8 +186,8 @@ binary**: yes or no, with `file:line` evidence for every "no".
 - [ ] No abbreviations (allowed: `id`, `url`, `http`).
 - [ ] Every literal with meaning is a named constant.
 - [ ] Functions are linear and flat: no arbitrary extraction; extracted
-      blocks are reused ≥ 2× or intention-named.
-- [ ] Complexity ≤ 10, nesting ≤ 4.
+      blocks are reused >= 2x or intention-named.
+- [ ] Complexity <= 10, nesting <= 4.
 - [ ] Docstrings on public callables.
 
 ### 3. Typing
@@ -229,7 +234,10 @@ binary**: yes or no, with `file:line` evidence for every "no".
 
 ### 7. Security and autonomy
 
-- [ ] No new dependency without an approved escalation.
+- [ ] No new dependency without an approved escalation, where the
+      versioned allowlist of `docs/engineering-rules.md` (N2) counts
+      as approval; until the allowlist file exists, everything
+      escalates.
 - [ ] The worklog entry (`docs/worklog/<date>-pr-<N>.md`) is present in
       the diff and its title is coherent with the change; for a direct
       commit on `daily`, the entry follows `docs/worklog/_template.md`.
@@ -315,8 +323,8 @@ the reviewer answers from the bundle alone.
 The review bundle (this document, the ADRs, the pull request
 specification, the diff) is built deterministically by
 `make review-bundle`. The reviewer answers with a **JSON report**
-(`findings` with `severity`, `file`, `line`, `rule`, `evidence`). The
-driver script recomputes all counts locally and fails closed: an
+(`findings` with `severity`, `file`, `line`, `rule`, `evidence`).
+The driver script recomputes all counts locally and fails closed: an
 unknown severity is recorded as BLOCKING, an invalid answer is a
 protocol failure. Exit codes drive the merge:
 
