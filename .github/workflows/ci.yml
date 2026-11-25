@@ -69,16 +69,4 @@ jobs:
         run: uv sync --locked
 
       - name: License gate of the locked graph
-        env:
-          # N2 (ADR-0008): the license set is configuration, not
-          # constitution; the community-validation judgment lives in
-          # the pull request evidence, this gate just fails closed.
-          ALLOWED_LICENSES: >-
-            MIT;MIT License;Apache-2.0;Apache 2.0;Apache License
-            2.0;Apache Software License;BSD-2-Clause;BSD-2-Clause
-            License;BSD-3-Clause;BSD-3-Clause License;BSD License;BSD;ISC;ISC
-            License;MPL-2.0;MPL 2.0;Mozilla Public License 2.0 (MPL
-            2.0);Python Software Foundation License
-        run: >-
-          uv run --with pip-licenses python -m piplicenses
-          --allow-only "$ALLOWED_LICENSES"
+        run: uv run python -m scripts license-gate
