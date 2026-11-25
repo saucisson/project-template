@@ -16,7 +16,7 @@ document (ADR-0008), the ADRs, the pull request specification
 and the diff under review. Nothing else enters the prompt -
 context isolation is enforced by construction, not by prompt
 discipline. Stdlib only,
-so it runs in the bareest CI image: this module defers its
+so it runs in the barest CI image: this module defers its
 ``httpx``-dependent imports into the ``review`` runner, on purpose.
 
 The developer agent runs ``review`` after opening a pull request and
@@ -281,7 +281,7 @@ def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) ->
 def run_review(*, arguments: argparse.Namespace) -> int:
     """Entry point: pull request number in, reviewer verdict out."""
     # Deferred import, on purpose: review-bundle (this module's other
-    # subcommand) stays stdlib-only and runs in the bareest CI image.
+    # subcommand) stays stdlib-only and runs in the barest CI image.
     from scripts import _github  # noqa: PLC0415
 
     github_token = load_github_token()
