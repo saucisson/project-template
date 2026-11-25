@@ -43,18 +43,18 @@ single dependency direction: inward, toward the data. The layers below
 are those of the notify tool, the reference application.
 
 ```text
-+---------------------------------------------+
-| main (composition root)                     |  wires everything, configures logging
-|  +---------------------------------------+  |
-|  | infrastructure (adapters)             |  |  console, Discord, future I/O
-|  |  +---------------------------------+  |  |
-|  |  | services (pure logic)           |  |  |  orchestration, ports
-|  |  |  +---------------------------+  |  |  |
-|  |  |  | models (domain language)  |  |  |  |  validated data, errors, settings
-|  |  |  +---------------------------+  |  |  |
-|  |  +---------------------------------+  |  |
-|  +---------------------------------------+  |
-+---------------------------------------------+
+┌─────────────────────────────────────────┐
+│ main (composition root)                     │  wires everything, configures logging
+│  ┌───────────────────────────────────────────┐  │
+│  │ infrastructure (adapters)             │  │  console, Discord, future I/O
+│  │  ┌────────────────────────────────────┐  │  │
+│  │  │ services (pure logic)           │  │  │  orchestration, ports
+│  │  │  ┌───────────────────────────┐  │  │  │
+│  │  │  │ models (domain language)  │  │  │  │  validated data, errors, settings
+│  │  │  └───────────────────────────┘  │  │  │
+│  │  └───────────────────────────────────┘  │  │
+│  └───────────────────────────────────────┘  │
+└───────────────────────────────────────┘
 ```
 
 The rule, enforced mechanically (for the Python tools: import-linter,
@@ -107,7 +107,7 @@ of the onion.
 - **Linear over decomposed.** Prefer a longer, readable, flat function
   over arbitrary extraction. Extract only when the block is reused at
   least twice or carries a name-worthy intention of its own.
-- Complexity budget <= 10, nesting depth <= 4.
+- Complexity budget ≤ 10, nesting depth ≤ 4.
 - Docstrings on every public callable.
 - Conventional Commits, enforced by review and release-please.
 
@@ -169,8 +169,8 @@ binary**: yes or no, with `file:line` evidence for every "no".
 
 ### 1. Architecture and imports
 
-- [ ] All dependencies point strictly inward (`models` -> nothing,
-      `services` -> `models`, `infrastructure` -> inner layers, `main` -> all).
+- [ ] All dependencies point strictly inward (`models` → nothing,
+      `services` → `models`, `infrastructure` → inner layers, `main` → all).
 - [ ] `models` contains no I/O, no orchestration.
 - [ ] I/O happens only in `infrastructure` adapters, behind a port
       (`services/ports.py`).
@@ -186,8 +186,8 @@ binary**: yes or no, with `file:line` evidence for every "no".
 - [ ] No abbreviations (allowed: `id`, `url`, `http`).
 - [ ] Every literal with meaning is a named constant.
 - [ ] Functions are linear and flat: no arbitrary extraction; extracted
-      blocks are reused >= 2x or intention-named.
-- [ ] Complexity <= 10, nesting <= 4.
+      blocks are reused ≥ 2× or intention-named.
+- [ ] Complexity ≤ 10, nesting ≤ 4.
 - [ ] Docstrings on public callables.
 
 ### 3. Typing
