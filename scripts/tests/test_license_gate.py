@@ -46,17 +46,23 @@ def test_expression_is_case_insensitive() -> None:
 
 def test_license_violation_expression_decides_first() -> None:
     """A present expression decides, classifiers stay unread."""
-    assert license_gate.license_violation(
-        expression="GPL-3.0-only", license_classifiers=("MIT License",), legacy_license=""
-    ) == "GPL-3.0-only"
-    assert license_gate.license_violation(
-        expression="MIT", license_classifiers=("GPL License",), legacy_license=""
-    ) is None
+    assert (
+        license_gate.license_violation(
+            expression="GPL-3.0-only", license_classifiers=("MIT License",), legacy_license=""
+        )
+        == "GPL-3.0-only"
+    )
+    assert (
+        license_gate.license_violation(
+            expression="MIT", license_classifiers=("GPL License",), legacy_license=""
+        )
+        is None
+    )
 
 
 def test_license_violation_classifiers_pass_on_any_allowed_name() -> None:
     """M
-ultiple classifier names pass when one is allowed."""
+    ultiple classifier names pass when one is allowed."""
     assert (
         license_gate.license_violation(
             expression="", license_classifiers=("MIT License", "GPL License"), legacy_license=""

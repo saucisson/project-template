@@ -147,9 +147,7 @@ def scan_offenders() -> list[str]:
     for distribution in importlib.metadata.distributions():
         violation = distribution_violation(distribution=distribution)
         if violation is not None:
-            offenders.append(
-                f"{distribution.metadata['Name']} {distribution.version}: {violation}"
-            )
+            offenders.append(f"{distribution.metadata['Name']} {distribution.version}: {violation}")
     return offenders
 
 
