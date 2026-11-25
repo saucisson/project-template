@@ -313,7 +313,11 @@ ports-and-adapters ceremony.
   history is a corpus that agents consume to reconstruct intent;
   "fix bug" is a machine-context loss, not a style nit. Conventional
   Commits and generated changelogs stay; the unit boundary is a
-  human-owned decision.
+  human-owned decision. Merges are rebase-only:
+  what lands on the target branch is the branch's own commits,
+  nothing is squashed or rewritten at merge time, so squash happens
+  in the branch before the PR is merged; one-idea units arrive
+  intact on `main`.
 - **R8.** PR size budget: ~500 changed lines for all repos. If a
   change genuinely cannot split, the split proposal in the PR body is
   the escape valve, and the reviewer flags the exception. Review
