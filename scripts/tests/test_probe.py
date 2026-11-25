@@ -4,13 +4,13 @@ import argparse
 import subprocess
 from typing import TYPE_CHECKING
 
+import pytest
+
 from scripts import probe
 from scripts._shared import EXIT_CODE_CRITERIA_UNMET, EXIT_CODE_SUCCESS
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    import pytest
 
 
 def _passing_front() -> subprocess.CompletedProcess[str]:
@@ -49,7 +49,12 @@ def test_probe_single_commit_passes_when_every_front_is_green(
     checkout_succeeded = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
     monkeypatch.setattr(probe, "try_git", lambda *, arguments: checkout_succeeded)
     monkeypatch.setattr(probe, "commit_subject", lambda *, commit: "docs: the contract")
-    monkeypatch.setattr(probe, "run_command", lambda *, command, directory: _passing_front())
+    def fake_run_command(
+        *, command: tuple[str, ...], directory: Path
+    ) -> subprocess.CompletedProcess[str]:
+        return _passing_front()
+
+    monkeypatch.setattr(probe, "run_command", fake_run_command)
     verdict = probe.probe_single_commit(
         context=probe.WorktreeContext(directory=tmp_path, probe_branch="probe-merge/1"),
         commit="aaa",
