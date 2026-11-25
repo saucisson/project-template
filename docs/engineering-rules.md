@@ -296,6 +296,16 @@ ports-and-adapters ceremony.
   approval authority stays human. Two models agreeing on
   plausible-but-wrong remains the known failure mode: the pre-review
   filters, it never certifies.
+- **H5.** Review is sequential, per commit: the PR body declares the
+  global goal and the commit order as the frame; each commit is read
+  against its own message, a declared contract (message matches
+  content, one idea, the anchor test of any behavior change in the
+  same commit); the walk closes with one composition pass over the
+  whole sequence (goal reached, no commit undoes what another set).
+  Per-commit greenness (compile plus fast front on every commit) is
+  a driver gate in the `make probe-merge` family of N5, not reviewer
+  attention; the reviewer reports what the mechanical oracles cannot
+  see.
 
 ### I. Git and flow
 
@@ -317,7 +327,7 @@ ports-and-adapters ceremony.
   what lands on the target branch is the branch's own commits,
   nothing is squashed or rewritten at merge time, so squash happens
   in the branch before the PR is merged; one-idea units arrive
-  intact on `main`.
+  intact on `main`, and review follows the same grain (H5).
 - **R8.** PR size budget: ~500 changed lines for all repos. If a
   change genuinely cannot split, the split proposal in the PR body is
   the escape valve, and the reviewer flags the exception. Review
@@ -439,6 +449,9 @@ Every item binary, `file:line` evidence on every no:
 - [ ] Error messages carry what/where/which-invariant (D3).
 - [ ] Squashed scratch iterations; one idea per commit; worklog entry
       present (I3).
+- [ ] Commit walk: each commit's message matches its diff and states
+      one idea; any behavior change carries its anchor test in the same
+      commit; no commit depends on a later one to be green (H5, I3).
 - [ ] No `any` escape, cast corridor, or ignored diagnostic without
       an inline justification (C1, C4).
 
