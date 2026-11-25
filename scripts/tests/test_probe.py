@@ -49,6 +49,7 @@ def test_probe_single_commit_passes_when_every_front_is_green(
     checkout_succeeded = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
     monkeypatch.setattr(probe, "try_git", lambda *, arguments: checkout_succeeded)
     monkeypatch.setattr(probe, "commit_subject", lambda *, commit: "docs: the contract")
+
     def fake_run_command(
         *, command: tuple[str, ...], directory: Path
     ) -> subprocess.CompletedProcess[str]:
